@@ -1,0 +1,85 @@
+
+======================================================================
+DIRECTIONAL HYPOTHESIS ANALYSIS
+======================================================================
+
+HYPOTHESIS
+──────────────────────────────────────────────────────────────────────
+The Collision Principle's margin alone doesn't predict vulnerability.
+Attack success also depends on DIRECTION alignment:
+
+• Circuit attacks ADD brackets → push toward "]]"
+• Samples predicting "]" (negative logit_diff) are the targets
+• Samples predicting "]]" cannot be pushed further
+
+PREDICTION:
+• Circuit attacks: Negative correlation with SIGNED margin
+  (more negative = more room to push = higher success)
+• Random attacks: No correlation (no consistent direction)
+
+======================================================================
+RESULTS: SIGNED MARGIN CORRELATION
+======================================================================
+
+Random Attacks:
+  r = -0.0329, p = 0.8580
+  Interpretation: NO correlation
+  Status: ✓ AS PREDICTED
+
+Circuit-Informed Attacks (Combined Strategy):
+  r = -0.6190, p = 0.0002
+  Interpretation: Strong negative correlation
+  Status: ✓ AS PREDICTED
+
+======================================================================
+RESULTS: SUCCESS BY PREDICTION CLASS
+======================================================================
+
+Random Attacks:
+  Samples predicting "]]": 1.6% success (n=16)
+  Samples predicting "]":  1.6% success (n=16)
+  Difference: 0.0 percentage points
+
+Circuit-Informed Attacks:
+  Samples predicting "]]": 0.0% success (n=16)
+  Samples predicting "]":  48.4% success (n=16)
+  Difference: 48.4 percentage points
+
+======================================================================
+INTERPRETATION
+======================================================================
+
+Circuit attacks are HIGHLY EFFECTIVE on samples predicting "]"
+but INEFFECTIVE on samples already predicting "]]".
+
+This is because:
+1. Circuit attacks INSERT brackets, pushing toward nested structure ("]]")
+2. Samples at "]​" have room to move toward "]]" → high success
+3. Samples at "]]" are already at the target → nowhere to push → low success
+
+The 15× efficiency gain comes from:
+• Consistent attack DIRECTION aligned with "]​" → "]]" transition
+• Random attacks waste effort in non-productive directions
+
+======================================================================
+REFINED COLLISION PRINCIPLE
+======================================================================
+
+ORIGINAL:
+  Vulnerability ∝ 1 / |g(v)|
+  (smaller margin = easier to attack)
+
+REFINED:
+  Vulnerability = f(margin) × direction_alignment
+
+  Where direction_alignment = {
+    1  if attack pushes toward decision boundary
+    0  if attack pushes away from boundary
+  }
+
+This explains:
+• Why circuit attacks are 15× more efficient (aligned direction)
+• Why random attacks show no margin correlation (random direction)
+• Why "]​" samples are preferentially attacked (attackable direction)
+
+======================================================================

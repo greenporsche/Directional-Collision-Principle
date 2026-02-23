@@ -1,0 +1,23 @@
+{
+  "lipschitz_constant": 3.035120908419289,
+  "involution_constant": 1.0,
+  "margin_denominator": 6.070241816838578,
+  "bracket_task": {
+    "lipschitz_constant": 3.035120908419289,
+    "involution_constant": 1.0,
+    "margin_denominator": 6.070241816838578,
+    "certified_G_total": 114472520210.45651,
+    "certified_G_bound": 228945040420.91302,
+    "certified_log10_gap": 10.87755524344999,
+    "model_overall_sparsity": 0.9990234375
+  },
+  "quote_task": {
+    "lipschitz_constant": 1.3527042269706733,
+    "involution_constant": 1.0,
+    "margin_denominator": 2.7054084539413465,
+    "certified_G_total": 11529555204.359653,
+    "certified_G_bound": 23059110408.719307,
+    "certified_log10_gap": 10.23163970162592,
+    "model_overall_sparsity": 0.99609375
+  }
+}

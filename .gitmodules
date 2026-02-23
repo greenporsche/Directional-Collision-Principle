@@ -1,0 +1,3 @@
+[submodule "research/sparse-circuits/circuit_sparsity-main"]
+	path = research/sparse-circuits/circuit_sparsity-main
+	url = https://github.com/openai/circuit_sparsity.git

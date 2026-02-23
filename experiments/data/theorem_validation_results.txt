@@ -1,0 +1,88 @@
+
+======================================================================
+THEOREM VALIDATION RESULTS: COLLISION PRINCIPLE
+======================================================================
+
+RESEARCH QUESTION
+-----------------
+Does the Adversarial Margin |g(v)| = |logit_diff| predict attack vulnerability?
+
+HYPOTHESIS
+----------
+According to the Collision Principle theorem:
+    dist(v, Z) >= |g(v)| / L(1+K)
+
+Samples with LOW |g(v)| have smaller "exclusion radius" and should be
+MORE vulnerable to adversarial attack.
+
+Expected: NEGATIVE correlation between margin and attack success.
+
+======================================================================
+STATISTICAL RESULTS
+======================================================================
+
+1. PEARSON CORRELATION (Primary)
+   -----------------------------
+   r = 0.1069
+   p = 0.560214
+   n = 32 samples
+
+   Interpretation:
+   - Direction: INCORRECT (positive)
+   - Significance: NO (p >= 0.05)
+   - Verdict: ✗ THEOREM NOT VALIDATED
+
+2. SPEARMAN CORRELATION (Robustness Check)
+   ---------------------------------------
+   rho = 0.1025
+   p = 0.576528
+
+   (Non-parametric, robust to outliers)
+   Significant: NO
+
+3. LINEAR REGRESSION
+   -----------------
+   slope = 0.004251
+   intercept = 0.0301
+   R² = 0.0114
+   p = 0.560214
+
+   Interpretation:
+   For each 1-unit increase in margin, success rate changes by 0.43%
+
+4. POINT-BISERIAL (Individual Trials)
+   ----------------------------------
+   r = 0.0587
+   p = 0.349787
+   n = 256 trials
+
+   (Correlation between margin and binary success for each attack)
+
+======================================================================
+KEY FINDINGS
+======================================================================
+
+1. The Collision Principle's prediction is NOT SUPPORTED:
+   - Lower margin samples ARE NOT more vulnerable
+   - Correlation coefficient: r = 0.107
+
+2. Statistical significance: NOT ACHIEVED (p = 0.5602)
+
+3. Effect size interpretation (|r|):
+   - |r| < 0.1: negligible
+   - 0.1 <= |r| < 0.3: small
+   - 0.3 <= |r| < 0.5: medium
+   - |r| >= 0.5: large
+
+   This study: |r| = 0.107 = small
+
+======================================================================
+CONCLUSION
+======================================================================
+
+The Collision Principle theorem could not be validated with statistical significance.
+
+The Adversarial Margin |g(v)| = |logit_diff| does not significantly predict
+which samples will be vulnerable to adversarial attack.
+
+======================================================================

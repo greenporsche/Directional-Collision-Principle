@@ -1,0 +1,72 @@
+
+======================================================================
+PREDICT-THEN-ATTACK PROTOCOL RESULTS
+======================================================================
+
+THE EXPERIMENT
+──────────────────────────────────────────────────────────────────────
+Can the Directional Collision Principle predict attack success
+BEFORE running any attacks?
+
+PREDICTION MODEL
+──────────────────────────────────────────────────────────────────────
+Based on theoretical insight:
+  - Circuit attacks push toward "]]" (insert brackets)
+  - Samples predicting "]" (negative logit_diff) can be flipped
+  - Samples predicting "]]" (positive logit_diff) cannot
+
+Rule: VULNERABLE if signed_logit_diff < 0.00
+      ROBUST if signed_logit_diff ≥ 0.00
+
+======================================================================
+RESULTS
+======================================================================
+
+CLASSIFICATION METRICS
+─────────────────────────────────────────────────────────────
+Accuracy:   84.4%  (27/32 correct)
+Precision:  68.8%  (of predicted vulnerable, 11/16 were attacked)
+Recall:     100.0%  (of actual attacks, 11/11 were predicted)
+F1 Score:   81.5%  (harmonic mean of precision and recall)
+
+ROC AUC:    0.818  (1.0 = perfect, 0.5 = random)
+
+CONFUSION MATRIX
+─────────────────────────────────────────────────────────────
+                    Predicted Robust    Predicted Vulnerable
+Actually Robust          16                    5
+Actually Attacked         0                   11
+
+INTERPRETATION
+─────────────────────────────────────────────────────────────
+True Negatives:  16 samples correctly identified as robust
+True Positives:  11 samples correctly identified as vulnerable
+False Positives: 5 samples incorrectly flagged as vulnerable
+False Negatives: 0 attacks we failed to predict
+
+======================================================================
+SIGNIFICANCE
+======================================================================
+
+GOOD PREDICTION ACCURACY: 84%
+
+The fact that a simple threshold on signed_logit_diff achieves
+84% accuracy demonstrates that:
+
+1. The Directional Collision Principle has PREDICTIVE POWER
+2. We can identify vulnerable samples BEFORE attacking
+3. The theory captures the essential structure of vulnerability
+
+This is the key result:
+→ Theory makes prediction
+→ Prediction is tested
+→ Prediction succeeds with 84% accuracy
+
+======================================================================
+
+CROSS-VALIDATION (Robustness Check)
+─────────────────────────────────────────────────────────────
+Mean Accuracy:  81.4% ± 5.7%
+Mean F1 Score:  76.3% ± 5.8%
+
+======================================================================

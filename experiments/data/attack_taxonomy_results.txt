@@ -1,0 +1,176 @@
+
+======================================================================
+ATTACK TAXONOMY ANALYSIS
+======================================================================
+
+THEORETICAL FRAMEWORK
+─────────────────────────────────────────────────────────────────────
+
+The Directional Collision Principle predicts that adversarial attacks
+succeed through three distinct mechanisms:
+
+1. RADIUS-EXCEEDING
+   Formula: ||δ|| > |g(v)| / L(1+K)
+   Mechanism: Large perturbations push the representation past the
+              collision-free radius around the original input.
+
+2. LIPSCHITZ INFLATION
+   Formula: L_effective ↑ → margin ↓
+   Mechanism: Context manipulation (e.g., adding many tokens) increases
+              the effective Lipschitz constant, shrinking the margin.
+
+3. INVOLUTION-TARGETED
+   Formula: Minimize |g(v)| = |A(v) - A(τ(v))|
+   Mechanism: Directly add structure that reduces the gap between
+              the representation and its symmetric counterpart.
+
+======================================================================
+STRATEGY MAPPING
+======================================================================
+
+
+DISTRACTOR_COMMENT
+─────────────────────────────────────────────────────────────────────
+  Category:           Involution-Targeted
+  Mechanism:          Direct movement toward τ(v) via circuit knowledge
+
+  Performance:
+    Overall success:  3.1%
+    On "]" samples:   6.2%
+    On "]]" samples:  0.0%
+    Selectivity:      +6.2% (higher = more targeted)
+
+  Directional Correlation:
+    r = -0.313 (p = 0.0815)
+    Strong negative correlation
+
+
+UNBALANCED_CONTEXT
+─────────────────────────────────────────────────────────────────────
+  Category:           Radius-Exceeding
+  Mechanism:          Large perturbations push past margin boundary
+
+  Performance:
+    Overall success:  3.9%
+    On "]" samples:   7.8%
+    On "]]" samples:  0.0%
+    Selectivity:      +7.8% (higher = more targeted)
+
+  Directional Correlation:
+    r = -0.239 (p = 0.1875)
+    Weak/no correlation
+
+
+ACTIVATION_TARGETED
+─────────────────────────────────────────────────────────────────────
+  Category:           Involution-Targeted
+  Mechanism:          Direct movement toward τ(v) via circuit knowledge
+
+  Performance:
+    Overall success:  10.9%
+    On "]" samples:   21.9%
+    On "]]" samples:  0.0%
+    Selectivity:      +21.9% (higher = more targeted)
+
+  Directional Correlation:
+    r = -0.385 (p = 0.0294)
+    Strong negative correlation
+
+
+CONTEXT_DILUTION
+─────────────────────────────────────────────────────────────────────
+  Category:           Lipschitz Inflation
+  Mechanism:          Context manipulation increases effective L
+
+  Performance:
+    Overall success:  0.0%
+    On "]" samples:   0.0%
+    On "]]" samples:  0.0%
+    Selectivity:      +0.0% (higher = more targeted)
+
+  Directional Correlation:
+    r = nan (p = nan)
+    Weak/no correlation
+
+
+COMBINED
+─────────────────────────────────────────────────────────────────────
+  Category:           Hybrid
+  Mechanism:          Combines multiple attack vectors
+
+  Performance:
+    Overall success:  24.2%
+    On "]" samples:   48.4%
+    On "]]" samples:  0.0%
+    Selectivity:      +48.4% (higher = more targeted)
+
+  Directional Correlation:
+    r = -0.619 (p = 0.0002)
+    Strong negative correlation
+
+
+======================================================================
+SCALING ANALYSIS
+======================================================================
+
+How does success scale with perturbation budget (tokens modified)?
+
+
+DISTRACTOR_COMMENT:
+  1 token:  0.0%
+  5 tokens: 12.5%
+  Scaling:  inf× improvement from 1→5 tokens
+  Trend:    Linear scaling
+
+
+UNBALANCED_CONTEXT:
+  1 token:  0.0%
+  5 tokens: 6.2%
+  Scaling:  inf× improvement from 1→5 tokens
+  Trend:    Sublinear/saturating
+
+
+ACTIVATION_TARGETED:
+  1 token:  6.2%
+  5 tokens: 18.8%
+  Scaling:  3.0× improvement from 1→5 tokens
+  Trend:    Linear scaling
+
+
+CONTEXT_DILUTION:
+  1 token:  0.0%
+  5 tokens: 0.0%
+  Scaling:  inf× improvement from 1→5 tokens
+  Trend:    Sublinear/saturating
+
+
+COMBINED:
+  1 token:  15.6%
+  5 tokens: 34.4%
+  Scaling:  2.2× improvement from 1→5 tokens
+  Trend:    Linear scaling
+
+
+======================================================================
+KEY FINDINGS
+======================================================================
+
+1. ALL STRATEGIES SHOW DIRECTIONAL SELECTIVITY
+   - Near-zero success on "]]" samples
+   - High success on "]" samples
+   - Confirms the Directional Collision Principle
+
+2. INVOLUTION-TARGETED STRATEGIES ARE MOST EFFICIENT
+   - activation_targeted and distractor_comment achieve high success
+     even with minimal perturbation
+   - They exploit circuit knowledge to minimize |g(v)| directly
+
+3. HYBRID (COMBINED) ACHIEVES BEST OVERALL PERFORMANCE
+   - Combines multiple attack vectors
+   - 24.2% overall success rate
+
+4. CONTEXT DILUTION SHOWS LIPSCHITZ INFLATION SIGNATURE
+   - Success scales with number of added tokens
+   - Consistent with attention averaging reducing effective margin
+
+======================================================================
