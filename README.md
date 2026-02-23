@@ -24,31 +24,9 @@ The framework was validated on OpenAI's interpretable sparse circuits across two
 
 ## Repository Structure
 
-```
-├── paper/                          # Research paper and presentation materials
-│   ├── FINAL_PAPER_DRAFT.md        # Complete paper draft
-│   ├── RESEARCH_SUMMARY.md         # Extended research summary
-│   ├── PITCH_SCRIPT.md             # Presentation script
-│   ├── POSTER_DESIGN.md            # Poster layout specification
-│   └── QA_COMPREHENSIVE.md         # Anticipated Q&A
-│
-├── research/                       # Theory and background
-│   ├── theorem.md                  # Formal theorem statements and proofs
-│   ├── application.md              # Theory-to-experiment bridge
-│   ├── literature.md               # Literature review (15 papers)
-│   ├── methodology.md              # Experimental methodology
-│   └── sparse-circuits/            # Reference materials
-│       ├── circuit_sparsity-main/  # OpenAI sparse circuits (git submodule)
-│       ├── 2511.13653v1.pdf        # Gao et al. 2025 paper
-│       └── 2511.13653v1.md         # Paper notes
-│
-└── experiments/                    # All experimental code and results
-    ├── README.md                   # Experiment-specific documentation
-    ├── pyproject.toml              # Python dependencies
-    ├── src/                        # Experiment scripts
-    ├── data/                       # CSV/JSON/TXT result files
-    └── figures/                    # Generated PNG and PDF figures
-```
+- **`paper/`** — Research paper, presentation materials, and Q&A prep
+- **`research/`** — Formal theory (theorems, proofs), literature review, and OpenAI sparse circuits submodule
+- **`experiments/`** — All experimental code (`src/`), result data (`data/`), and generated figures (`figures/`)
 
 ---
 
@@ -80,10 +58,19 @@ uv pip install -e ../research/sparse-circuits/circuit_sparsity-main
 cd experiments
 source .venv/bin/activate
 
-# Core validation experiments (run from experiments/ directory)
+# Run all core experiments in sequence
+python src/main.py
+```
+
+Each script can also be run individually:
+
+```bash
+# Core validation
 python src/directional_analysis.py       # Directional correlation (r = -0.60)
-python src/predict_then_attack.py        # Prediction accuracy (84%)
-python src/attack_taxonomy_analysis.py   # Attack strategy mapping (15x efficiency)
+python src/predict_then_attack.py        # Prediction accuracy (87.5%)
+python src/attack_taxonomy_analysis.py   # Attack strategy mapping (15.5x efficiency)
+
+# Lipschitz estimation
 python src/lipschitz_estimation.py       # Bracket task L ≈ 3.04
 python src/quote_lipschitz_estimation.py # Quote task L ≈ 1.35
 python src/quote_bracket_comparison.py   # Cross-task comparison
@@ -91,7 +78,6 @@ python src/quote_bracket_comparison.py   # Cross-task comparison
 # Additional analyses
 python src/error_analysis.py             # Prediction error analysis
 python src/defense_demonstration.py      # Margin-based defense
-python src/theorem_validation.py         # Theorem R4 validation
 ```
 
 Figures are saved to `experiments/figures/` and data outputs to `experiments/data/`.
@@ -106,19 +92,6 @@ Figures are saved to `experiments/figures/` and data outputs to `experiments/dat
 | csp_yolo1 | 159M | Quote type (`"` vs `'`) | [OpenAI](https://github.com/openai/circuit_sparsity) |
 
 Models are automatically downloaded from OpenAI's public blob storage on first run.
-
----
-
-## Citation
-
-```bibtex
-@misc{krishna2025directional,
-  title={Directional Collision Principle: A Geometric Theory of Adversarial Vulnerability in Neural Networks},
-  author={Krishna, Siddharth},
-  year={2025},
-  note={ISEF 2025 Competition Entry}
-}
-```
 
 ---
 
