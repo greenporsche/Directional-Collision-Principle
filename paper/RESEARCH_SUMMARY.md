@@ -4,7 +4,6 @@
 
 **Author:** Siddharth Krishna
 **Category:** Systems Software / Computational Biology and Bioinformatics / Mathematics
-**Competition:** ISEF 2025
 
 ---
 

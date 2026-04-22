@@ -2,7 +2,6 @@
 
 **Author:** Siddharth Krishna
 **Category:** Systems Software / Machine Learning
-**Competition:** ISEF 2025
 
 ---
 

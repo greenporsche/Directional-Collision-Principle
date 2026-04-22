@@ -2,8 +2,7 @@
 Hero Figure: The Complete Story in One Image
 =============================================
 
-This figure is the centerpiece of the ISEF poster. It tells the complete
-story: Theory → Discovery → Validation → Prediction
+Theory → Discovery → Validation → Prediction
 
 Layout:
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -366,17 +365,6 @@ def main():
     create_hero_figure(df_full, df_circuit, output_path)
     print(f"  Saved: {output_path}")
     print(f"  Saved: {output_path.with_suffix('.pdf')}")
-
-    print("\n" + "=" * 70)
-    print("HERO FIGURE COMPLETE")
-    print("=" * 70)
-    print("\nThis figure tells the complete story:")
-    print("  A. Theory: Directional Collision Principle")
-    print("  B. Validation: Strong correlation for circuit attacks only")
-    print("  C. Prediction: 84% accuracy, 100% recall")
-    print("  D. Impact: 15× efficiency improvement")
-    print("\nReady for your ISEF poster!")
-    print("=" * 70)
 
     return metrics
 

@@ -1,7 +1,7 @@
 [project]
 name = "adversarial-experiments"
 version = "0.1.0"
-description = "ISEF Adversarial Robustness via Collision Geometry - Directional Collision Principle"
+description = "Adversarial Robustness via Collision Geometry - Directional Collision Principle"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

@@ -2,7 +2,7 @@
 
 **A Geometric Theory of Adversarial Vulnerability in Neural Networks**
 
-*Siddharth Krishna* | ISEF 2025 | Systems Software / Machine Learning
+*Siddharth Krishna* | Systems Software / Machine Learning
 
 ---
 

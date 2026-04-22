@@ -1,5 +1,5 @@
 """
-Visualize experiment results for ISEF poster.
+Visualize experiment results for poster.
 Updated to use circuit-informed attack results.
 """
 import pandas as pd
