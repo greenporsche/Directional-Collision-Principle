@@ -136,22 +136,22 @@ Hence reaching the boundary requires
 \[
 t \ge \frac{|m_{\mathrm{before}}|}{\beta^{+}(F)} \ \text{ if } m_{\mathrm{before}} < 0, \qquad t \ge \frac{|m_{\mathrm{before}}|}{\beta^{-}(F)} \ \text{ if } m_{\mathrm{before}} > 0.
 \]
-If $\beta^{+}(F)$ and $\beta^{-}(F)$ are very unequal, success becomes direction-asymmetric even at similar margins.
+If $\beta^{+}(F)$ and $\beta^{-}(F)$ are very unequal, the necessary edit counts on the two sides differ. That can permit direction-dependent thresholds even at similar margins. These are necessary conditions only, and they do not guarantee that success differs by direction.
 
 This is a conditional statement. We did not measure $\beta^{+}(F)$ and $\beta^{-}(F)$ for the tested families. The tested bracket attacks moved the margin in both directions (264 of 640 edits lowered it), even though every observed flip went one way (Section~\ref{sec:oneway}). The inequality shows how direction-dependent success is consistent with Section~3.4. It does not show that the observed asymmetry occurred for this reason.
 
-\subsection{Sparse-Circuit Local Tightening (\proved{} locally under A9)}
-Let $c_i(x)$ bound the one-token influence on $m$ at coordinate $i$ near $x$. If only coordinates in an active set $S_x$ materially influence $m$ locally (A9), then for substitution perturbations
+\subsection{Sparse-Circuit Local Tightening (\proved{} under A9, not verified for these models)}
+Assume A9: there is a fixed set $S$ of coordinates such that, at every intermediate sequence along an edit path from $x$ to $x'$, changing a coordinate outside $S$ does not change $m$ at all, and changing a coordinate $i \in S$ changes $m$ by at most $c_i$. Let the path be $x = x^{0}, x^{1}, \ldots, x^{k} = x'$, where $x^{j}$ differs from $x^{j-1}$ only at coordinate $i_j$, and each changed coordinate appears once. Then $m(x') - m(x) = \sum_{j=1}^{k} \big[m(x^{j}) - m(x^{j-1})\big]$ is a telescoping sum. Each term with $i_j \notin S$ is zero, and each term with $i_j \in S$ is at most $c_{i_j}$ in absolute value, so
 \[
-|\Delta m| \le \sum_{i \,\in\, \mathrm{changed} \,\cap\, S_x} c_i(x).
+|m(x') - m(x)| \le \sum_{i \,\in\, \mathrm{changed} \,\cap\, S} c_i.
 \]
-Consequences:
+Consequences, conditional on A9:
 \begin{enumerate}
-  \item Effective local sensitivity shrinks when perturbations mostly avoid $S_x$.
-  \item Structured attacks that overlap $S_x$ can be much more effective than random edits.
-  \item Sparse interpretability (identifying $S_x$) can tighten practical, family-specific risk estimates.
+  \item Effective local sensitivity shrinks when perturbations mostly avoid $S$.
+  \item Structured attacks that overlap $S$ can be much more effective than random edits.
+  \item Sparse interpretability (identifying $S$) can tighten practical, family-specific risk estimates.
 \end{enumerate}
-This tightening is local. It does not imply a global guarantee unless support drift is controlled.
+A9 is a strong assumption, and we did not test it for these models. The fair version used a weaker one, that only coordinates in $S_x$ ``materially'' influence $m$. That weaker assumption does not imply the inequality.
 
 \subsection{Named Assumptions}\label{sec:assumptions}
 \begin{center}
@@ -168,14 +168,14 @@ A5 & Lipschitz regularity & $f_1, f_2$ are Lipschitz with constants $G_1, G_2$ &
 A6 & Certification & A true upper bound $\hat{G} \ge G_1 + G_2$ is known. \emph{Not available here} & \S3.5 \\
 A7 & Output involution & $\tau_{\mathrm{out}}(z_1, z_2) = (z_2, z_1)$ on $\mathbb{R}^2$ & \S3.3 \\
 A8 & Family perturbations & Each attack family defines an admissible set $\Delta_F(x)$ & \S3.7 \\
-A9 & Local support stability & Only coordinates in $S_x$ materially affect $m$ locally & \S3.8 \\
+A9 & Fixed sparse support & Along any edit path, coordinates outside a fixed $S$ do not change $m$, and each $i \in S$ changes it by at most $c_i$. \emph{Not verified here} & \S3.8 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \subsection{What Section 3 Proves and What It Does Not}
 \begin{itemize}
-  \item \textbf{Proved:} the Lipschitz-margin lower bound (Theorem R4, a standard result), the directional budget inequalities, and local sparse tightening under A9. All are elementary and conditional on their assumptions.
+  \item \textbf{Proved:} the Lipschitz-margin lower bound (Theorem R4, a standard result), the directional budget inequalities, and sparse tightening under the strong assumption A9. All are elementary and conditional on their assumptions, and A6 and A9 are not verified for these models.
   \item \textbf{Not proved:} any certified radius for these models, since no valid constant is available (Section~\ref{sec:nocert}). Also not proved: that the tested attack families are one-directional.
   \item \textbf{Calibrated:} the empirical $\Lhat$ used to describe attack sensitivity.
   \item \textbf{Observed:} everything in Section~\ref{sec:results}.
@@ -229,7 +229,6 @@ To avoid circularity in local sensitivity estimation, we designed the \textbf{IC
 \subsection{Statistical Methods}
 \begin{itemize}
   \item Pearson correlation for continuous relationships
-  \item Fisher's exact test for comparing flip counts
   \item 5-fold stratified cross-validation of the prediction threshold (\texttt{predict\_then\_attack.py})
   \item Counts are reported directly. The fair version also quoted bootstrap and multi-seed confidence intervals. Their saved outputs could not be found, so those intervals are omitted.
 \end{itemize}
@@ -254,9 +253,9 @@ All five circuit-informed strategies & 54 / 640 & 8.4\% \\
 \bottomrule
 \end{tabular}
 \end{center}
-The best strategy (combined) flipped the prediction about 15 times as often as random edits (31/128 vs.\ 2/128; Fisher's exact test, two-sided $p \approx 2 \times 10^{-8}$). Random edits succeeded only twice, so the size of that ratio is very uncertain, and we report counts rather than an interval. Across all five strategies, the flip rate was 8.4\%, about 5 times the random rate.
+The best strategy (combined) flipped the prediction about 15 times as often as random edits (31/128 vs.\ 2/128). Random edits succeeded only twice, so the size of that ratio is very uncertain, and we report counts rather than an interval. The 128 attempts reuse the same 32 inputs at four budgets, and both methods attack the same inputs, so the attempts are not independent trials and no significance test is reported. Across all five strategies, the flip rate was 8.4\%, about 5 times the random rate.
 
-Signed margin was negatively correlated with each input's fraction of attempts flipped: $r = -0.603$ across all five strategies (32 inputs, $p = 0.0003$) and $r = -0.619$ for the combined strategy alone ($p = 0.0002$). For random edits, $r = -0.033$ ($p = 0.86$). As Section~\ref{sec:oneway} shows, this correlation mostly reflects which answer an input started with.
+Signed margin was negatively correlated with each input's fraction of attempts flipped: $r = -0.603$ across all five strategies (32 inputs, $p = 0.0003$) and $r = -0.619$ for the combined strategy alone ($p = 0.0002$). For random edits, $r = -0.033$ ($p = 0.86$). As Section~\ref{sec:oneway} shows, all flipped inputs shared the same starting answer, which contributes to this correlation.
 
 \subsection{Sign-Based Prediction Rule, Evaluated Retrospectively (\observed)}\label{sec:rule}
 The rule flags an input as vulnerable if the model's signed logit difference is negative, meaning the model answers \rb{}. It flags 16 of the 32 inputs. It uses no calibrated parameter, and it was evaluated on the same saved attacks, not on new inputs.
@@ -291,21 +290,10 @@ Swap context & 15 / 112 & 16 / 112 \\
 \end{center}
 The fair version reported a 13.4\% vs.\ 0.0\% asymmetry and concluded that the double-quote representation is more fragile. That asymmetry comes from the distractor strategy only, and the nested strategy leans the other way. Whether flips are one-directional depends on the attack strategy, which is consistent with the directional budgets of Section~\ref{sec:directional} being family-specific.
 
-\subsection{Cross-Task Sensitivity and Normalized Margins (\calibrated)}\label{sec:normalized}
-\begin{center}
-\small
-\begin{tabular}{@{}lcccl@{}}
-\toprule
-Task & $\Lhat$ & $\Lhat(1+K)$ & Normalized margin & Budget unit \\
-\midrule
-Bracket & 3.04 & 6.07 & 0.95 & substituted token \\
-Quote & 1.35 & 2.71 & 3.39 & prepended line \\
-\bottomrule
-\end{tabular}
-\end{center}
-These values are in different units (Section~\ref{sec:attacks}), so they cannot be compared across the two models. The fair version's cross-task comparisons are withdrawn: the bracket model being ``$2.24\times$ more sensitive'' and normalized margins ``correctly predicting the $3.56\times$ larger attack budget''. Neither experiment shows that one model is harder to flip than the other under matched token edits.
+\subsection{Sensitivity Estimates (\calibrated)}\label{sec:normalized}
+The empirical sensitivity was $\Lhat = 3.04$ per substituted token for the bracket model and $\Lhat = 1.35$ per prepended line for the quote model. These values are in different units (Section~\ref{sec:attacks}), so they cannot be compared across the two models. Neither experiment shows that one model is harder to flip than the other under matched token edits.
 
-Within each model, normalized margins also do not predict the budget. For the bracket model (about 1 token), only 7 of 160 one-token attempts succeeded. For the quote model (about 3.4 lines), no input flipped with fewer than 50 prepended lines.
+The fair version's cross-task comparisons are withdrawn: the bracket model being ``$2.24\times$ more sensitive'', and ``normalized margins'' ``correctly predicting the $3.56\times$ larger attack budget''. Those normalized margins were a legacy score, $|m|/[\Lhat(1+K)]$ with $K = 1$, which is an extra factor of two over the score in Section~3.6. The fair version also used these scores as forecasts of the budget an attack needs. Even with a valid constant, Theorem R4 gives only a lower bound, and flips that need larger budgets do not contradict a lower bound. So no budget forecast follows from it, and that claim is withdrawn.
 
 \subsection{Post-Hoc Error Analysis (\observed)}
 Of the 16 inputs the rule flags, the 12 that were flipped (by any strategy) and the 4 that were not differ in how much the attacks moved them:
@@ -325,7 +313,7 @@ This comparison is circular. Both quantities are measured from the same attacks 
 \subsection{One-Directional Flips (\observed)}\label{sec:oneway}
 In this saved run, every circuit-attack flip on the bracket model went from \rb{} to \rbb{}. On inputs answering \rb{}, 54 of 320 attempts succeeded (the combined strategy alone: 31 of 64, or 48.4\%). On inputs answering \rbb{}, 0 of 320 succeeded. Random edits flipped one input on each side (1 of 64 each).
 
-This does not mean every edit pushed the margin toward \rbb{}: 264 of 640 circuit-attack edits lowered it. Nor does it show that reverse flips are impossible. It shows that, for these strategies and budgets, the model's starting answer determined which inputs were flipped.
+This does not mean every edit pushed the margin toward \rbb{}: 264 of 640 circuit-attack edits lowered it. Nor does it show that reverse flips are impossible. It shows that, for these strategies and budgets, all flipped inputs shared the same starting answer. Four inputs with that answer were not flipped by any strategy.
 
 \section{Discussion}
 
@@ -382,16 +370,17 @@ The main lesson stands, with the numbers corrected: understanding a model's inte
   \item \textbf{Title and abstract:} reframed as an exploratory study. The contribution is empirical.
   \item \textbf{Section 3.4:} Theorem R4 identified as the standard Lipschitz-margin bound, with citations.
   \item \textbf{Section 3.5 and former Section 5.7:} the ``certified'' Lipschitz bound is withdrawn. It omitted attention's input-dependent interactions and the conversion from token edits to embedding distance.
-  \item \textbf{Section 3.7:} the directional inequality is stated as conditional. The tested attacks moved the margin both ways.
+  \item \textbf{Section 3.7:} the directional inequality is stated as conditional, and as giving necessary conditions only. The tested attacks moved the margin both ways.
+  \item \textbf{Section 3.8:} sparse tightening is restated with the stronger assumption it needs, with the telescoping argument, and marked as not verified for these models.
   \item \textbf{Sections 4.4 and 6.3:} flips are described as prediction changes, not misclassifications.
   \item \textbf{Section 4.5:} the claim of preliminary ICP validation is withdrawn, because no ICP results were saved.
-  \item \textbf{Section 5.1:} ``24.2\% across all trials'' corrected to the best strategy (31/128), with all five strategies reported. ``Efficiency improvement'' is now a flip-rate ratio. Confidence intervals that could not be verified are omitted.
+  \item \textbf{Section 5.1:} ``24.2\% across all trials'' corrected to the best strategy (31/128), with all five strategies reported. ``Efficiency improvement'' is now a flip-rate ratio. Confidence intervals that could not be verified are omitted, and so is the Fisher's exact test, because the attempts reuse the same inputs and are not independent.
   \item \textbf{Section 5.2:} 87.5\% is now stated with its definition (any strategy), alongside 84.4\% (combined strategy), and the label changed from \calibrated{} to \observed. The edit-budget prediction claim (28 of 32) is withdrawn.
   \item \textbf{Sections 3.6, 4.1, 4.2 and 4.4:} the quote-model experiment is described as it was run. Its attacks prepend whole lines, its budget counts lines rather than tokens, and its baseline is fixed padding rather than random edits.
   \item \textbf{Section 5.3:} the quote-model asymmetry is scoped to one of three strategies. The conclusion that the double-quote representation is ``more fragile'' is withdrawn.
-  \item \textbf{Section 5.4:} the claim that normalized margins predict attack budgets is withdrawn, as are the cross-task comparisons ($2.24\times$ sensitivity, $3.56\times$ budget). The two models' values are in different units.
+  \item \textbf{Section 5.4:} the normalized-margin table is removed. The claim that these scores forecast attack budgets is withdrawn, as are the cross-task comparisons ($2.24\times$ sensitivity, $3.56\times$ budget), because the two models' values are in different units.
   \item \textbf{Section 5.5:} the error analysis is described as circular and post hoc, and the significance test is removed.
-  \item \textbf{Section 5.6:} ``perfect directional selectivity confirms the core geometric insight'' is replaced with the observed counts and the caveat about margin movement.
+  \item \textbf{Section 5.6:} ``perfect directional selectivity confirms the core geometric insight'' is replaced with the observed counts, the caveat about margin movement, and the four inputs that were never flipped.
 \end{itemize}
 
 \begin{thebibliography}{99}\small
