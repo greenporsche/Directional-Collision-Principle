@@ -1,0 +1,402 @@
+% Revised paper (November 2026). The version submitted to the fair is in fair-version/.
+% Build from this folder:  pdflatex FINAL_PAPER.tex && pdflatex FINAL_PAPER.tex
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=2pt,topsep=4pt}
+
+% Claim labels
+\newcommand{\lab}[1]{{\footnotesize\MakeUppercase{#1}}}
+\newcommand{\proved}{\lab{proved}}
+\newcommand{\calibrated}{\lab{calibrated}}
+\newcommand{\observed}{\lab{observed}}
+
+% Tokens
+\newcommand{\rb}{\texttt{]}}
+\newcommand{\rbb}{\texttt{]]}}
+\newcommand{\dq}{\texttt{\textquotedbl}}
+\newcommand{\sq}{\texttt{\textquotesingle}}
+\newcommand{\Lhat}{\hat{L}}
+
+\title{Directional Collision Principle:\\An Exploratory Study of Circuit-Informed Adversarial Attacks on Weight-Sparse Transformers}
+\author{Siddharth Krishna}
+\date{Submitted to a school science fair, January 2026\\Revised November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This project asks whether knowing how a model's internal circuit works helps an attacker, and whether it helps predict which inputs an attack will succeed on. We study two of OpenAI's weight-sparse transformers, whose task circuits are human-interpretable~\cite{gao2025}: a bracket-counting model and a quote-type model. As a lens we use the standard Lipschitz-margin bound, which says an input with margin $m(x)$ cannot be flipped by a perturbation smaller than $|m(x)|/L$~\cite{hein2017,tsuzuku2018}, together with an elementary directional version for attack families that move the margin unevenly in the two directions. These statements are simple consequences of their assumptions. The contribution of this work is empirical.
+
+On the bracket model (32 inputs, requested budgets of 1 to 5 token substitutions), the best circuit-informed strategy flipped the model's prediction in 31 of 128 attempts (24.2\%), compared with 2 of 128 (1.6\%) for random token edits. All 54 flips across the five circuit-informed strategies went from \rb{} to \rbb{}. None of the 320 attempts on inputs where the model answered \rbb{} succeeded. Signed margin and per-input flip rate were correlated ($r = -0.60$). A rule that flags inputs by the model's starting answer alone sorted 28 of 32 inputs correctly when ``vulnerable'' means flipped by any strategy, and 27 of 32 for the best strategy alone. That rule was evaluated retrospectively, on the same attacks. On the quote model, where the attacks prepended whole lines of code instead of substituting tokens, no attack flipped a prediction with fewer than 50 prepended lines, and only one of three strategies was one-directional.
+
+All claims are labeled \proved{} (mathematical statements under stated assumptions), \calibrated{} (empirical estimates standing in for unknown constants), or \observed{} (measurements from these finite experiments).
+\end{abstract}
+
+\begin{center}
+\fbox{\parbox{0.92\linewidth}{\small\textbf{Revision note.} This is a corrected version of the paper submitted to a school science fair in January 2026. The original is kept in \texttt{paper/fair-version/}. In November 2026 every claim was re-checked against the saved experiment data. Several were found to be overstated or unsupported and have been corrected or withdrawn. Appendix~\ref{app:changes} lists every change.}}
+\end{center}
+
+\section{Introduction}
+
+Neural networks are susceptible to adversarial attacks: small, carefully crafted perturbations that cause misclassification. Despite extensive empirical research, explaining \emph{when} and \emph{why} a particular attack succeeds on a particular input remains difficult.
+
+Recent work by OpenAI~\cite{gao2025} introduced \textbf{weight-sparse transformers} that learn disentangled, interpretable circuits. These models enforce $L_0$ sparsity during training, creating minimal circuits for specific tasks that are $16\times$ smaller than dense equivalents. This interpretability creates both opportunity and risk: understanding circuits enables better attacks, but also better defenses.
+
+This paper is an exploratory study of that connection. We provide:
+\begin{enumerate}
+  \item A restatement of the standard Lipschitz-margin bound~\cite{hein2017,tsuzuku2018} and an elementary directional version for attack families that move the margin unevenly (Section~\ref{sec:theory}). These are background and a lens for the experiments, not new results.
+  \item Five circuit-informed attack strategies on a bracket-counting model, compared with random token edits, and three on a quote-type model, compared with neutral padding (Sections~\ref{sec:methods} and~\ref{sec:results}).
+  \item The observation that on the bracket model every circuit-attack flip went in the same direction, together with what that does and does not show.
+  \item A retrospective evaluation of a simple rule that predicts vulnerability from the model's starting answer.
+\end{enumerate}
+Throughout, we maintain a three-tier claim labeling system (Section~\ref{sec:labels}) to keep mathematical statements separate from measurements.
+
+\section{Background and Motivation}
+
+\subsection{The Problem of Adversarial Vulnerability}
+Neural networks are susceptible to adversarial attacks: small, carefully crafted perturbations that cause misclassification. Despite extensive empirical research~\cite{szegedy2014,goodfellow2015,madry2018}, explaining \emph{when} and \emph{why} a particular attack succeeds remains difficult.
+
+\subsection{Interpretable Sparse Circuits}
+Recent work by OpenAI~\cite{gao2025} introduced \textbf{weight-sparse transformers} that learn disentangled, interpretable circuits. These models:
+\begin{itemize}
+  \item Enforce $L_0$ sparsity during training (most weights are exactly zero)
+  \item Learn minimal circuits for specific tasks ($16\times$ smaller than dense models)
+  \item Enable mechanistic understanding of model behavior
+\end{itemize}
+
+\subsection{Research Question}
+Prior work has studied input-space perturbation bounds ($\varepsilon$-ball robustness), empirical attack and defense methods, and post-hoc interpretability. This project asks a narrower, empirical question: on models whose circuits are known, does that knowledge help an attacker, and does it help anticipate which inputs will be flipped?
+
+\section{Theoretical Framework}\label{sec:theory}
+
+\subsection{Epistemic Labeling and Scope}\label{sec:labels}
+To avoid conflating theorems with experiments, we classify all statements as \proved{}, \calibrated{}, or \observed{}.
+\begin{itemize}
+  \item \proved{}: mathematical statements that follow from explicitly stated assumptions.
+  \item \calibrated{}: practical instantiations where unknown theoretical constants are replaced by empirical surrogates.
+  \item \observed{}: empirical regularities in finite experiments.
+\end{itemize}
+The \proved{} statements in this section are short, elementary consequences of their assumptions. We state them to make the framing of the experiments precise, not as new mathematics.
+
+\subsection{Assumptions}
+We work under assumptions A1--A9 (listed in Section~\ref{sec:assumptions}). The essential structural distinction is:
+\begin{enumerate}
+  \item The \textbf{output-space involution geometry} is exact and requires only A7.
+  \item The \textbf{input-space robustness inequality} requires A1--A5. Turning it into a certified radius would also require A6, which is not available here (Section~\ref{sec:nocert}).
+  \item \textbf{Directional attack asymmetry} requires A8 and, for local sparse tightening, optionally A9.
+\end{enumerate}
+
+\subsection{Output-Space Involution Geometry (\proved)}
+Let $V_{\mathrm{out}} = \mathbb{R}^2$ be the two-logit space with $\tau_{\mathrm{out}}(z_1, z_2) = (z_2, z_1)$. Define $g_{\mathrm{out}}(z) = z_1 - z_2$. Then $g_{\mathrm{out}}(\tau_{\mathrm{out}}(z)) = -g_{\mathrm{out}}(z)$, and the zero set is $Z_{\mathrm{out}} = \{z : z_1 = z_2\}$. This gives an exact odd-function geometry in logit space.
+
+\emph{Interpretation:} output-space symmetry is mathematically clean but does not by itself certify robustness in input space.
+
+\subsection{Input-Space Robustness Bound: Theorem R4 (\proved)}
+Define the margin $m(x) = f_1(x) - f_2(x)$ and the boundary set $D = \{x : m(x) = 0\}$. Under A1--A5, $m$ is $(G_1 + G_2)$-Lipschitz because
+\[
+|m(x) - m(y)| \le |f_1(x) - f_1(y)| + |f_2(x) - f_2(y)| \le (G_1 + G_2)\, d_X(x, y).
+\]
+Therefore, for every $x$,
+\[
+\operatorname{dist}_X(x, D) \ge \frac{|m(x)|}{G_1 + G_2}.
+\]
+This is the standard Lipschitz-margin argument used in certified-robustness research~\cite{hein2017,tsuzuku2018}. It follows in one line from A5 and is restated here as background. It is only as useful as the constant $G_1 + G_2$. For the token-level metric used here (A2), no valid value of that constant is known for these models (Section~\ref{sec:nocert}).
+
+\subsection{No Certified Constant Is Available}\label{sec:nocert}
+The fair version of this paper multiplied the spectral norms of the models' weight matrices and called the result a certified Lipschitz constant. That calculation is withdrawn, for two reasons. First, it bounded self-attention by the norms of its projection matrices, but self-attention's sensitivity depends on input-dependent query-key interactions, and dot-product self-attention is not globally Lipschitz on unbounded inputs~\cite{kim2021}. Second, it did not convert token substitutions (the Hamming metric of A2) into the embedding-space distance that the product of norms measures. Without a valid upper bound (A6), Theorem R4 cannot be turned into a certified radius for these models, and this paper reports none.
+
+\subsection{Empirical Sensitivity Parameter \texorpdfstring{$\hat{L}$}{L-hat} (\calibrated)}
+Because the constant in Theorem R4 is unknown, we describe sensitivity with an empirical parameter $\Lhat$: the 95th percentile of the observed margin change per unit of recorded attack budget across the attack trials (Section~\ref{sec:calib}). For the bracket model that unit is one requested token substitution. For the quote model it is one prepended line of code, so the two values of $\Lhat$ are in different units. The resulting score is
+\[
+\mathrm{score}(x) = \frac{|m(x)|}{\Lhat}.
+\]
+This score summarizes how far the tested attacks moved the margin. It is not an upper bound, so it is not a certified radius, and Section~\ref{sec:normalized} shows that it does not predict how many edits an attack needs.
+
+\subsection{Directional Family Constraint (\proved{} structure, \observed{} context)}\label{sec:directional}
+Let $F$ denote a fixed attack family with admissible edit set $\Delta_F(x)$. Define the per-edit family gains:
+\begin{itemize}
+  \item $\beta^{+}(F)$: maximal one-edit increase in $m$
+  \item $\beta^{-}(F)$: maximal one-edit decrease in $m$
+\end{itemize}
+For any $t$-edit sequence from family $F$,
+\[
+m_{\mathrm{after}} \le m_{\mathrm{before}} + t\,\beta^{+}(F), \qquad m_{\mathrm{after}} \ge m_{\mathrm{before}} - t\,\beta^{-}(F).
+\]
+Hence reaching the boundary requires
+\[
+t \ge \frac{|m_{\mathrm{before}}|}{\beta^{+}(F)} \ \text{ if } m_{\mathrm{before}} < 0, \qquad t \ge \frac{|m_{\mathrm{before}}|}{\beta^{-}(F)} \ \text{ if } m_{\mathrm{before}} > 0.
+\]
+If $\beta^{+}(F)$ and $\beta^{-}(F)$ are very unequal, the necessary edit counts on the two sides differ. That can permit direction-dependent thresholds even at similar margins. These are necessary conditions only, and they do not guarantee that success differs by direction.
+
+This is a conditional statement. We did not measure $\beta^{+}(F)$ and $\beta^{-}(F)$ for the tested families. The tested bracket attacks moved the margin in both directions (264 of 640 edits lowered it), even though every observed flip went one way (Section~\ref{sec:oneway}). The inequality shows how direction-dependent success is consistent with Section~3.4. It does not show that the observed asymmetry occurred for this reason.
+
+\subsection{Sparse-Circuit Local Tightening (\proved{} under A9, not verified for these models)}
+Assume A9: there is a fixed set $S$ of coordinates such that, at every intermediate sequence along an edit path from $x$ to $x'$, changing a coordinate outside $S$ does not change $m$ at all, and changing a coordinate $i \in S$ changes $m$ by at most $c_i$. Let the path be $x = x^{0}, x^{1}, \ldots, x^{k} = x'$, where $x^{j}$ differs from $x^{j-1}$ only at coordinate $i_j$, and each changed coordinate appears once. Then $m(x') - m(x) = \sum_{j=1}^{k} \big[m(x^{j}) - m(x^{j-1})\big]$ is a telescoping sum. Each term with $i_j \notin S$ is zero, and each term with $i_j \in S$ is at most $c_{i_j}$ in absolute value, so
+\[
+|m(x') - m(x)| \le \sum_{i \,\in\, \mathrm{changed} \,\cap\, S} c_i.
+\]
+Consequences, conditional on A9:
+\begin{enumerate}
+  \item Effective local sensitivity shrinks when perturbations mostly avoid $S$.
+  \item Structured attacks that overlap $S$ can be much more effective than random edits.
+  \item Sparse interpretability (identifying $S$) can tighten practical, family-specific risk estimates.
+\end{enumerate}
+A9 is a strong assumption, and we did not test it for these models. The fair version used a weaker one, that only coordinates in $S_x$ ``materially'' influence $m$. That weaker assumption does not imply the inequality.
+
+\subsection{Named Assumptions}\label{sec:assumptions}
+\begin{center}
+\small
+\begin{tabular}{@{}llp{6.4cm}l@{}}
+\toprule
+ID & Assumption & Formal statement & Used in \\
+\midrule
+A1 & Input space & $X$ is a set of token sequences & All \\
+A2 & Metric & Hamming distance for substitution-only edits; edit distance if insertions or deletions & \S3.4 \\
+A3 & Model outputs & $F(x) = (f_1(x), f_2(x))$ are class logits & \S3.4 \\
+A4 & Decision boundary & $D = \{x : f_1(x) = f_2(x)\}$ & \S3.4 \\
+A5 & Lipschitz regularity & $f_1, f_2$ are Lipschitz with constants $G_1, G_2$ & \S3.4 \\
+A6 & Certification & A true upper bound $\hat{G} \ge G_1 + G_2$ is known. \emph{Not available here} & \S3.5 \\
+A7 & Output involution & $\tau_{\mathrm{out}}(z_1, z_2) = (z_2, z_1)$ on $\mathbb{R}^2$ & \S3.3 \\
+A8 & Family perturbations & Each attack family defines an admissible set $\Delta_F(x)$ & \S3.7 \\
+A9 & Fixed sparse support & Along any edit path, coordinates outside a fixed $S$ do not change $m$, and each $i \in S$ changes it by at most $c_i$. \emph{Not verified here} & \S3.8 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{What Section 3 Proves and What It Does Not}
+\begin{itemize}
+  \item \textbf{Proved:} the Lipschitz-margin lower bound (Theorem R4, a standard result), the directional budget inequalities, and sparse tightening under the strong assumption A9. All are elementary and conditional on their assumptions, and A6 and A9 are not verified for these models.
+  \item \textbf{Not proved:} any certified radius for these models, since no valid constant is available (Section~\ref{sec:nocert}). Also not proved: that the tested attack families are one-directional.
+  \item \textbf{Calibrated:} the empirical $\Lhat$ used to describe attack sensitivity.
+  \item \textbf{Observed:} everything in Section~\ref{sec:results}.
+\end{itemize}
+
+\section{Experimental Methodology}\label{sec:methods}
+
+\subsection{Input Metric and V-Space Definition}
+We define the input space $V$ as the set of discrete token sequences of fixed length $N$. To enable Lipschitz analysis, we equip this space with the \textbf{Hamming distance} $d_H(v, v') = \sum_i \mathbb{1}[v_i \neq v'_i]$, which counts the number of token substitutions required to transform one sequence into another. The bracket-model experiments substitute tokens in place, and record their budget as the requested number of substitutions (Section~\ref{sec:calib}). The quote-model experiments are different. Those prepend whole lines of code, which changes the sequence length, and they record the budget as a number of lines (Section~\ref{sec:attacks}).
+
+\subsection{Sensitivity Calibration Protocol (\calibrated)}\label{sec:calib}
+For each task, we compute the empirical sensitivity $s = |\Delta g(v)| / b$ across all attack trials, where $b$ is the recorded attack budget, and define $\Lhat$ as the \textbf{95th percentile} of these observed slopes. For the bracket model, $b$ is the requested substitution budget. The saved results record the requested budget rather than measured Hamming distance, so the actual number of changed positions can be smaller. For the quote model, $b$ is the number of prepended lines, so its $\Lhat$ is not a per-token sensitivity. Because $\Lhat$ is computed from the same attack trials it summarizes, it describes those attacks rather than predicting new ones.
+
+\subsection{Model Systems and Tasks}
+We study OpenAI's weight-sparse transformers~\cite{gao2025}:
+\begin{center}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Model & Parameters & Task & Description \\
+\midrule
+csp\_yolo2 & 475M & Bracket counting & Predict \rbb{} vs \rb{} for list closing \\
+csp\_yolo1 & 159M & Quote detection & Predict \dq{} vs \sq{} for string closing \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Attack Strategy Taxonomy}\label{sec:attacks}
+We implement and compare three categories of circuit-informed attacks:
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Category & Strategy & Mechanism \\
+\midrule
+Radius-exceeding & Unbalanced context & Insert unmatched structural tokens \\
+Involution-targeted & Distractor / activation & Exploit circuit knowledge for high-influence perturbations \\
+Lipschitz inflation & Context dilution & Saturate context with distractor tokens \\
+\bottomrule
+\end{tabular}
+\end{center}
+On the bracket model, each of 32 inputs was attacked by each of five strategies (unbalanced context, distractor comment, activation targeted, context dilution, and a combined strategy) at requested budgets of 1, 2, 3 and 5 token substitutions. Each strategy overwrites tokens in place. That gives 128 attempts per strategy and 640 in total. The baseline requested the same numbers of substitutions with random tokens from the vocabulary (128 attempts).
+
+The quote-model experiments were built differently. Each of the three strategies (distractor, nested, swap context) prepends $n$ copies of one fixed line of code to the input, for $n = 1, 2, 3, 5, 10, 20, 50$. Each line is several tokens, so $n$ counts lines, not tokens. The baseline prepends $n$ copies of the fixed line \texttt{\# padding}. It is a neutral-padding baseline, not random editing. There were 32 inputs, giving 224 attempts per strategy and 224 for the baseline. The two experiments' budgets are therefore not in a common unit.
+
+An attempt counts as a success, or \emph{flip}, when the model's prediction changes. The code does not check that the edited input still has the same correct answer, so flips are prediction changes, not verified misclassifications.
+
+\subsection{Independent Calibration Probe (ICP) Protocol}\label{sec:icp}
+To avoid circularity in local sensitivity estimation, we designed the \textbf{ICP protocol}. Before a targeted attack, an input $v$ is subjected to $M = 10$ random single-token substitutions sampled from the \texttt{tinypython} vocabulary distribution. The mean logit shift across these probes defines a prospective local sensitivity estimate $\Lhat_{\mathrm{local}}$, which could allow vulnerability to be estimated before an attack. No ICP results were saved (\texttt{experiments/data/icp\_log.txt} is empty), so none are reported.
+
+\subsection{Statistical Methods}
+\begin{itemize}
+  \item Pearson correlation for continuous relationships
+  \item 5-fold stratified cross-validation of the prediction threshold (\texttt{predict\_then\_attack.py})
+  \item Counts are reported directly. The fair version also quoted bootstrap and multi-seed confidence intervals. Their saved outputs could not be found, so those intervals are omitted.
+\end{itemize}
+
+\section{Results}\label{sec:results}
+
+\subsection{Circuit-Informed vs.\ Random Attacks (\observed)}
+\begin{center}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Attack on the bracket model & Flips & Rate \\
+\midrule
+Random token edits & 2 / 128 & 1.6\% \\
+Distractor comment & 4 / 128 & 3.1\% \\
+Unbalanced context & 5 / 128 & 3.9\% \\
+Activation targeted & 14 / 128 & 10.9\% \\
+Context dilution & 0 / 128 & 0.0\% \\
+Combined (best) & 31 / 128 & 24.2\% \\
+\midrule
+All five circuit-informed strategies & 54 / 640 & 8.4\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+The best strategy (combined) flipped the prediction about 15 times as often as random edits (31/128 vs.\ 2/128). Random edits succeeded only twice, so the size of that ratio is very uncertain, and we report counts rather than an interval. The 128 attempts reuse the same 32 inputs at four budgets, and both methods attack the same inputs, so the attempts are not independent trials and no significance test is reported. Across all five strategies, the flip rate was 8.4\%, about 5 times the random rate.
+
+Signed margin was negatively correlated with each input's fraction of attempts flipped: $r = -0.603$ across all five strategies (32 inputs, $p = 0.0003$) and $r = -0.619$ for the combined strategy alone ($p = 0.0002$). For random edits, $r = -0.033$ ($p = 0.86$). As Section~\ref{sec:oneway} shows, all flipped inputs shared the same starting answer, which contributes to this correlation.
+
+\subsection{Sign-Based Prediction Rule, Evaluated Retrospectively (\observed)}\label{sec:rule}
+The rule flags an input as vulnerable if the model's signed logit difference is negative, meaning the model answers \rb{}. It flags 16 of the 32 inputs. It uses no calibrated parameter, and it was evaluated on the same saved attacks, not on new inputs.
+\begin{center}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+``Vulnerable'' means flipped by\ldots & TP & FP & TN & FN & Accuracy \\
+\midrule
+any of the five strategies & 12 & 4 & 16 & 0 & 28/32 (87.5\%) \\
+the combined strategy & 11 & 5 & 16 & 0 & 27/32 (84.4\%) \\
+\bottomrule
+\end{tabular}
+\end{center}
+The fair version reported 87.5\% without stating which definition it used. That figure is reproduced by the all-strategy definition. \texttt{predict\_then\_attack.py} uses the combined-strategy definition. A 5-fold stratified cross-validation, choosing the threshold on the training folds, gave a mean accuracy of 81.4\% (standard deviation 5.7 points across folds) against the combined-strategy labels. This still uses the same 32 inputs.
+
+Recall is 100\% under both definitions, but recall alone is weak evidence, since flagging every input would also achieve it. Here it reflects that every observed flip started from \rb{}. The fair version also claimed that $\Lhat$ identified the required token budget for 28 of 32 inputs. The code does not compute this, and the claim is withdrawn.
+
+\subsection{Quote Model (\observed)}\label{sec:quote}
+On the quote model, the padding baseline never flipped a prediction (0 of 224). Circuit-informed attacks flipped none with 20 or fewer prepended lines (0 of 576) and 71 of 96 with 50 lines. Signed margin and flip rate were positively correlated ($r = +0.368$, $p = 0.038$), the opposite sign from the bracket model. The direction of flips depended on the strategy:
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Strategy & Flips from \dq{} inputs & Flips from \sq{} inputs \\
+\midrule
+Distractor & 15 / 112 & 0 / 112 \\
+Nested & 9 / 112 & 16 / 112 \\
+Swap context & 15 / 112 & 16 / 112 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The fair version reported a 13.4\% vs.\ 0.0\% asymmetry and concluded that the double-quote representation is more fragile. That asymmetry comes from the distractor strategy only, and the nested strategy leans the other way. Whether flips are one-directional depends on the attack strategy, which is consistent with the directional budgets of Section~\ref{sec:directional} being family-specific.
+
+\subsection{Sensitivity Estimates (\calibrated)}\label{sec:normalized}
+The empirical sensitivity was $\Lhat = 3.04$ per requested token substitution for the bracket model and $\Lhat = 1.35$ per prepended line for the quote model. These values are in different units (Section~\ref{sec:attacks}), so they cannot be compared across the two models. Neither experiment shows that one model is harder to flip than the other under matched token edits.
+
+The fair version's cross-task comparisons are withdrawn: the bracket model being ``$2.24\times$ more sensitive'', and ``normalized margins'' ``correctly predicting the $3.56\times$ larger attack budget''. Those normalized margins were a legacy score, $|m|/[\Lhat(1+K)]$ with $K = 1$, which is an extra factor of two over the score in Section~3.6. The fair version also used these scores as forecasts of the budget an attack needs. Even with a valid constant, Theorem R4 gives only a lower bound, and flips that need larger budgets do not contradict a lower bound. So no budget forecast follows from it, and that claim is withdrawn.
+
+\subsection{Post-Hoc Error Analysis (\observed)}
+Of the 16 inputs the rule flags, the 12 that were flipped (by any strategy) and the 4 that were not differ in how much the attacks moved them:
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Measured over the circuit-informed attacks & Flipped ($n=12$) & Not flipped ($n=4$) \\
+\midrule
+Mean $|\Delta m|$ per requested substitution ($\Lhat_{\mathrm{local}}$) & 1.49 & 0.10 \\
+Mean margin change & $+3.52$ & $+0.22$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+This comparison is circular. Both quantities are measured from the same attacks whose outcome they are meant to explain, so they restate that the attacks barely moved those four inputs rather than predicting it. With 4 inputs in one group, no significance test is reported. A prospective version, the ICP protocol (Section~\ref{sec:icp}), was designed, but its results were not saved.
+
+\subsection{One-Directional Flips (\observed)}\label{sec:oneway}
+In this saved run, every circuit-attack flip on the bracket model went from \rb{} to \rbb{}. On inputs answering \rb{}, 54 of 320 attempts succeeded (the combined strategy alone: 31 of 64, or 48.4\%). On inputs answering \rbb{}, 0 of 320 succeeded. Random edits flipped one input on each side (1 of 64 each).
+
+This does not mean every edit pushed the margin toward \rbb{}: 264 of 640 circuit-attack edits lowered it. Nor does it show that reverse flips are impossible. It shows that, for these strategies and budgets, all flipped inputs shared the same starting answer. Four inputs with that answer were not flipped by any strategy.
+
+\section{Discussion}
+
+\subsection{Main Contribution, with Correct Claim Levels}
+\begin{enumerate}
+  \item \textbf{Empirical (\observed):} on a sparse model with a known circuit, circuit-informed edits flipped predictions far more often than random edits, and every observed flip went in one direction.
+  \item \textbf{Framing (\proved, elementary):} the Lipschitz-margin bound and its directional version give a vocabulary for these observations. They are standard results or simple consequences of their assumptions.
+  \item \textbf{Retrospective prediction (\observed):} a simple sign-based rule identified every flipped input on the bracket model, at the cost of also flagging 4 or 5 inputs that were not flipped.
+\end{enumerate}
+
+\subsection{Interpretation of Cross-Task Results}
+The quote model's positive correlation does not contradict Theorem R4, which only gives a lower bound on distance. Together with the strategy-dependent directions in Section~\ref{sec:quote}, it suggests that direction-dependence is a property of the model and the attack family together, not of the model alone. Because the two experiments used different kinds of perturbation (token substitution vs.\ prepended lines) and different baselines, they cannot be compared quantitatively.
+
+\subsection{Limits and Non-Claims}
+\begin{itemize}
+  \item No certified bound is reported (Section~\ref{sec:nocert}). $\Lhat$ is descriptive.
+  \item Flips are prediction changes, not verified misclassifications.
+  \item The prediction rule is evaluated retrospectively on the same 32 inputs. Cross-validation reuses them, and no new inputs were tested.
+  \item The confidence intervals in the fair version could not be verified from the saved results and are omitted.
+  \item The quote-model experiment records its budget in prepended lines, not token edits, and uses fixed padding rather than random edits as its baseline. Its results are not on the same scale as the bracket-model results.
+  \item The scale is small: 32 inputs per model, one model per task, and a single saved run. The experiments have not been re-run from scratch since the fair.
+  \item We do \textbf{not} claim the directional rule is a universal theorem for all attack families.
+  \item Margin-based filtering is not validated against adaptive white-box attackers and is therefore a scoped heuristic.
+\end{itemize}
+
+\subsection{Why This Matters for Interpretable Sparse Circuits}
+Sparse circuits expose structure, such as active coordinates and family-specific vulnerabilities, that improves mechanistic understanding of failures. This can increase both attack effectiveness (when the structure is exploited) and diagnostic power (when it is monitored). The key point is not that sparsity is uniformly safer. It is that \textbf{sparsity makes the vulnerability geometry measurable}.
+
+\subsection{Future Work}
+\begin{enumerate}
+  \item Re-run all experiments from scratch with multiple seeds, saving every output
+  \item Evaluate the prediction rule on new, held-out inputs
+  \item Use label-preserving attacks, so flips can be checked as misclassifications
+  \item Measure $\beta^{+}$ and $\beta^{-}$ for each attack family
+  \item Run the prospective ICP validation
+  \item Extend to dense models via sparse circuit proxies~\cite{conmy2023}
+  \item Test the margin-based defense against adaptive adversaries
+\end{enumerate}
+
+\section{Conclusions}
+This project supports a narrower claim set than the fair version:
+\begin{enumerate}
+  \item \textbf{\proved{} (standard):} under explicit assumptions, distance to the decision boundary is at least the margin divided by the Lipschitz scale (Theorem R4). No valid constant is available for these models, so no certified radius is reported.
+  \item \textbf{\proved{} (elementary) / \observed:} directional family budgets ($\beta^{+}$, $\beta^{-}$) give a way to describe direction-dependent attack success. On the bracket model every observed flip went one way. On the quote model the direction depended on the strategy.
+  \item \textbf{\observed:} the best circuit-informed strategy flipped 31 of 128 bracket-model predictions, compared with 2 of 128 for random edits.
+  \item \textbf{\observed:} in retrospect, a sign-based rule sorted 28 of 32 inputs correctly (any strategy), or 27 of 32 (combined strategy).
+  \item \textbf{\calibrated:} empirical sensitivity estimates describe each experiment's attacks, but they do not predict attack budgets. They are in different units for the two models, so they do not show that either model is harder to attack.
+\end{enumerate}
+The main lesson stands, with the numbers corrected: understanding a model's internal structure can make attacks much more effective. That same understanding is what made it possible to see that, on the bracket model, these attacks succeeded only from one side of the decision boundary.
+
+\appendix
+\section{Changes from the Fair Version (January 2026)}\label{app:changes}
+\begin{itemize}
+  \item \textbf{Title and abstract:} reframed as an exploratory study. The contribution is empirical.
+  \item \textbf{Section 3.4:} Theorem R4 identified as the standard Lipschitz-margin bound, with citations.
+  \item \textbf{Section 3.5 and former Section 5.7:} the ``certified'' Lipschitz bound is withdrawn. It omitted attention's input-dependent interactions and the conversion from token edits to embedding distance.
+  \item \textbf{Section 3.7:} the directional inequality is stated as conditional, and as giving necessary conditions only. The tested attacks moved the margin both ways.
+  \item \textbf{Section 3.8:} sparse tightening is restated with the stronger assumption it needs, with the telescoping argument, and marked as not verified for these models.
+  \item \textbf{Sections 4.4 and 6.3:} flips are described as prediction changes, not misclassifications.
+  \item \textbf{Section 4.5:} the claim of preliminary ICP validation is withdrawn, because no ICP results were saved.
+  \item \textbf{Section 5.1:} ``24.2\% across all trials'' corrected to the best strategy (31/128), with all five strategies reported. ``Efficiency improvement'' is now a flip-rate ratio. Confidence intervals that could not be verified are omitted, and so is the Fisher's exact test, because the attempts reuse the same inputs and are not independent.
+  \item \textbf{Section 5.2:} 87.5\% is now stated with its definition (any strategy), alongside 84.4\% (combined strategy), and the label changed from \calibrated{} to \observed. The edit-budget prediction claim (28 of 32) is withdrawn.
+  \item \textbf{Sections 3.6, 4.1, 4.2 and 4.4:} the quote-model experiment is described as it was run. Its attacks prepend whole lines, its budget counts lines rather than tokens, and its baseline is fixed padding rather than random edits. The bracket-model budget is described as the requested number of substitutions, not measured Hamming distance.
+  \item \textbf{Section 5.3:} the quote-model asymmetry is scoped to one of three strategies. The conclusion that the double-quote representation is ``more fragile'' is withdrawn.
+  \item \textbf{Section 5.4:} the normalized-margin table is removed. The claim that these scores forecast attack budgets is withdrawn, as are the cross-task comparisons ($2.24\times$ sensitivity, $3.56\times$ budget), because the two models' values are in different units.
+  \item \textbf{Section 5.5:} the error analysis is described as circular and post hoc, and the significance test is removed.
+  \item \textbf{Section 5.6:} ``perfect directional selectivity confirms the core geometric insight'' is replaced with the observed counts, the caveat about margin movement, and the four inputs that were never flipped.
+\end{itemize}
+
+\begin{thebibliography}{99}\small
+\bibitem{gao2025} Gao, L., et al. (2025). Weight-sparse transformers have interpretable circuits. \emph{arXiv:2511.13653}.
+\bibitem{hein2017} Hein, M., \& Andriushchenko, M. (2017). Formal guarantees on the robustness of a classifier against adversarial manipulation. \emph{NeurIPS}.
+\bibitem{tsuzuku2018} Tsuzuku, Y., Sato, I., \& Sugiyama, M. (2018). Lipschitz-margin training: Scalable certification of perturbation invariance for deep neural networks. \emph{NeurIPS}.
+\bibitem{kim2021} Kim, H., Papamakarios, G., \& Mnih, A. (2021). The Lipschitz constant of self-attention. \emph{ICML}.
+\bibitem{szegedy2014} Szegedy, C., et al. (2014). Intriguing properties of neural networks. \emph{ICLR}.
+\bibitem{goodfellow2015} Goodfellow, I., et al. (2015). Explaining and harnessing adversarial examples. \emph{ICLR}.
+\bibitem{madry2018} Madry, A., et al. (2018). Towards deep learning models resistant to adversarial attacks. \emph{ICLR}.
+\bibitem{conmy2023} Conmy, A., et al. (2023). Towards automated circuit discovery for mechanistic interpretability. \emph{NeurIPS}.
+\bibitem{cohen2019} Cohen, J., et al. (2019). Certified adversarial robustness via randomized smoothing. \emph{ICML}.
+\bibitem{wong2018} Wong, E., \& Kolter, Z. (2018). Provable defenses against adversarial examples. \emph{ICML}.
+\bibitem{fawzi2018} Fawzi, A., et al. (2018). The robustness of deep networks: A geometrical perspective. \emph{IEEE SPM}.
+\bibitem{carlini2017} Carlini, N., \& Wagner, D. (2017). Adversarial examples are not easily detected. \emph{AISec}.
+\bibitem{elhage2022} Elhage, N., et al. (2022). Toy models of superposition. \emph{Anthropic}.
+\end{thebibliography}
+
+\end{document}

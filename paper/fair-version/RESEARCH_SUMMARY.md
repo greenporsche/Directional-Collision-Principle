@@ -5,7 +5,7 @@
 **Author:** Siddharth Krishna
 **Category:** Systems Software / Machine Learning
 
-> **Note (November 2026):** This is the version submitted to the school science fair, kept for the record. Several claims below were later found to be overstated, including the "certified" bound and the edit-budget prediction, and the confidence intervals could not be verified from the saved results. See [Limitations and corrections](../README.md#limitations-and-corrections) in the main README.
+> **Note (November 2026):** This is the version submitted to the school science fair, kept for the record. Several claims below were later found to be overstated, including the "certified" bound and the edit-budget prediction, and the confidence intervals could not be verified from the saved results. The corrected paper is [`../FINAL_PAPER.pdf`](../FINAL_PAPER.pdf). See also [Limitations and corrections](../../README.md#limitations-and-corrections) in the main README.
 
 ---
 

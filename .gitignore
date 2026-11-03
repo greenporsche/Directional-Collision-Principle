@@ -33,3 +33,10 @@ Thumbs.db
 
 # archive
 _archive/
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
