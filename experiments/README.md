@@ -117,9 +117,9 @@ See the main [README](../README.md#limitations-and-corrections) for what these n
 | Recall (11/11 flipped inputs flagged) | 100% | `src/predict_then_attack.py` |
 | Best strategy vs random flip rate (31/128 vs 2/128) | 15.5x | `src/attack_taxonomy_analysis.py` |
 | Bracket task L (empirical estimate) | **3.04** | `src/lipschitz_estimation.py` |
-| Quote task L (empirical estimate) | **1.35** | `src/quote_lipschitz_estimation.py` |
-| L Ratio (sensitivity) | **2.24x** | `src/quote_bracket_comparison.py` |
-| Normalized Margin Ratio | **3.56x** | `src/quote_bracket_comparison.py` |
+| Quote task L (empirical, per prepended line) | **1.35** | `src/quote_lipschitz_estimation.py` |
+| L ratio (withdrawn: units differ) | 2.24x | `src/quote_bracket_comparison.py` |
+| Normalized margin ratio (withdrawn: units differ) | 3.56x | `src/quote_bracket_comparison.py` |
 
 ---
 
@@ -168,9 +168,8 @@ python src/quote_bracket_comparison.py
 ```
 
 Expected:
-- Quote task L ~ 1.35 (vs bracket L ~ 3.04)
-- L ratio: 2.24x (bracket is more sensitive)
-- Normalized margin ratio: 3.56x
+- Quote task L ~ 1.35 per prepended line (bracket L ~ 3.04 per substituted token)
+- L ratio 2.24x and normalized margin ratio 3.56x: the scripts print these, but the two tasks measure budget in different units, so the ratios do not compare the models (see the main README)
 
 ---
 

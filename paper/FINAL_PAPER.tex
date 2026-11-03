@@ -37,7 +37,7 @@
 \begin{abstract}
 This project asks whether knowing how a model's internal circuit works helps an attacker, and whether it helps predict which inputs an attack will succeed on. We study two of OpenAI's weight-sparse transformers, whose task circuits are human-interpretable~\cite{gao2025}: a bracket-counting model and a quote-type model. As a lens we use the standard Lipschitz-margin bound, which says an input with margin $m(x)$ cannot be flipped by a perturbation smaller than $|m(x)|/L$~\cite{hein2017,tsuzuku2018}, together with an elementary directional version for attack families that move the margin unevenly in the two directions. These statements are simple consequences of their assumptions. The contribution of this work is empirical.
 
-On the bracket model (32 inputs, budgets of 1 to 5 changed tokens), the best circuit-informed strategy flipped the model's prediction in 31 of 128 attempts (24.2\%), compared with 2 of 128 (1.6\%) for random token edits. All 54 flips across the five circuit-informed strategies went from \rb{} to \rbb{}. None of the 320 attempts on inputs where the model answered \rbb{} succeeded. Signed margin and per-input flip rate were correlated ($r = -0.60$). A rule that flags inputs by the model's starting answer alone sorted 28 of 32 inputs correctly when ``vulnerable'' means flipped by any strategy, and 27 of 32 for the best strategy alone. That rule was evaluated retrospectively, on the same attacks. On the quote model, no attack flipped a prediction below a 50-token budget, and only one of three strategies was one-directional.
+On the bracket model (32 inputs, budgets of 1 to 5 changed tokens), the best circuit-informed strategy flipped the model's prediction in 31 of 128 attempts (24.2\%), compared with 2 of 128 (1.6\%) for random token edits. All 54 flips across the five circuit-informed strategies went from \rb{} to \rbb{}. None of the 320 attempts on inputs where the model answered \rbb{} succeeded. Signed margin and per-input flip rate were correlated ($r = -0.60$). A rule that flags inputs by the model's starting answer alone sorted 28 of 32 inputs correctly when ``vulnerable'' means flipped by any strategy, and 27 of 32 for the best strategy alone. That rule was evaluated retrospectively, on the same attacks. On the quote model, where the attacks prepended whole lines of code instead of substituting tokens, no attack flipped a prediction with fewer than 50 prepended lines, and only one of three strategies was one-directional.
 
 All claims are labeled \proved{} (mathematical statements under stated assumptions), \calibrated{} (empirical estimates standing in for unknown constants), or \observed{} (measurements from these finite experiments).
 \end{abstract}
@@ -55,7 +55,7 @@ Recent work by OpenAI~\cite{gao2025} introduced \textbf{weight-sparse transforme
 This paper is an exploratory study of that connection. We provide:
 \begin{enumerate}
   \item A restatement of the standard Lipschitz-margin bound~\cite{hein2017,tsuzuku2018} and an elementary directional version for attack families that move the margin unevenly (Section~\ref{sec:theory}). These are background and a lens for the experiments, not new results.
-  \item Five circuit-informed attack strategies on a bracket-counting model and three on a quote-type model, each compared with random token edits (Sections~\ref{sec:methods} and~\ref{sec:results}).
+  \item Five circuit-informed attack strategies on a bracket-counting model, compared with random token edits, and three on a quote-type model, compared with neutral padding (Sections~\ref{sec:methods} and~\ref{sec:results}).
   \item The observation that on the bracket model every circuit-attack flip went in the same direction, together with what that does and does not show.
   \item A retrospective evaluation of a simple rule that predicts vulnerability from the model's starting answer.
 \end{enumerate}
@@ -116,7 +116,7 @@ This is the standard Lipschitz-margin argument used in certified-robustness rese
 The fair version of this paper multiplied the spectral norms of the models' weight matrices and called the result a certified Lipschitz constant. That calculation is withdrawn, for two reasons. First, it bounded self-attention by the norms of its projection matrices, but self-attention's sensitivity depends on input-dependent query-key interactions, and dot-product self-attention is not globally Lipschitz on unbounded inputs~\cite{kim2021}. Second, it did not convert token substitutions (the Hamming metric of A2) into the embedding-space distance that the product of norms measures. Without a valid upper bound (A6), Theorem R4 cannot be turned into a certified radius for these models, and this paper reports none.
 
 \subsection{Empirical Sensitivity Parameter \texorpdfstring{$\hat{L}$}{L-hat} (\calibrated)}
-Because the constant in Theorem R4 is unknown, we describe sensitivity with an empirical parameter $\Lhat$: the 95th percentile of the observed margin change per changed token across the attack trials (Section~\ref{sec:calib}). The resulting score is
+Because the constant in Theorem R4 is unknown, we describe sensitivity with an empirical parameter $\Lhat$: the 95th percentile of the observed margin change per unit of recorded attack budget across the attack trials (Section~\ref{sec:calib}). For the bracket model that unit is one substituted token. For the quote model it is one prepended line of code, so the two values of $\Lhat$ are in different units. The resulting score is
 \[
 \mathrm{score}(x) = \frac{|m(x)|}{\Lhat}.
 \]
@@ -184,10 +184,10 @@ A9 & Local support stability & Only coordinates in $S_x$ materially affect $m$ l
 \section{Experimental Methodology}\label{sec:methods}
 
 \subsection{Input Metric and V-Space Definition}
-We define the input space $V$ as the set of discrete token sequences of fixed length $N$. To enable Lipschitz analysis, we equip this space with the \textbf{Hamming distance} $d_H(v, v') = \sum_i \mathbb{1}[v_i \neq v'_i]$, which counts the number of token substitutions required to transform one sequence into another. This metric matches our experimental perturbation budget (tokens modified).
+We define the input space $V$ as the set of discrete token sequences of fixed length $N$. To enable Lipschitz analysis, we equip this space with the \textbf{Hamming distance} $d_H(v, v') = \sum_i \mathbb{1}[v_i \neq v'_i]$, which counts the number of token substitutions required to transform one sequence into another. This metric matches the perturbation budget of the bracket-model experiments, which substitute tokens in place. It does not match the quote-model experiments. Those prepend whole lines of code, which changes the sequence length, and they record the budget as a number of lines (Section~\ref{sec:attacks}).
 
 \subsection{Sensitivity Calibration Protocol (\calibrated)}\label{sec:calib}
-For each task, we compute the empirical sensitivity $s = |\Delta g(v)| / d_H(v, v')$ across all attack trials and define $\Lhat$ as the \textbf{95th percentile} of these observed slopes. Because $\Lhat$ is computed from the same attack trials it summarizes, it describes those attacks rather than predicting new ones.
+For each task, we compute the empirical sensitivity $s = |\Delta g(v)| / b$ across all attack trials, where $b$ is the recorded attack budget, and define $\Lhat$ as the \textbf{95th percentile} of these observed slopes. For the bracket model, $b = d_H(v, v')$, the number of substituted tokens. For the quote model, $b$ is the number of prepended lines, so its $\Lhat$ is not a per-token sensitivity. Because $\Lhat$ is computed from the same attack trials it summarizes, it describes those attacks rather than predicting new ones.
 
 \subsection{Model Systems and Tasks}
 We study OpenAI's weight-sparse transformers~\cite{gao2025}:
@@ -203,7 +203,7 @@ csp\_yolo1 & 159M & Quote detection & Predict \dq{} vs \sq{} for string closing 
 \end{tabular}
 \end{center}
 
-\subsection{Attack Strategy Taxonomy}
+\subsection{Attack Strategy Taxonomy}\label{sec:attacks}
 We implement and compare three categories of circuit-informed attacks:
 \begin{center}
 \small
@@ -217,7 +217,9 @@ Lipschitz inflation & Context dilution & Saturate context with distractor tokens
 \bottomrule
 \end{tabular}
 \end{center}
-On the bracket model, each of 32 inputs was attacked by each of five strategies (unbalanced context, distractor comment, activation targeted, context dilution, and a combined strategy) at budgets of 1, 2, 3 and 5 changed tokens. That gives 128 attempts per strategy and 640 in total. The random baseline used the same inputs and budgets (128 attempts). On the quote model, 32 inputs were attacked by three strategies (distractor, nested, swap context) and by random edits, at budgets of 1, 2, 3, 5, 10, 20 and 50 tokens: 224 attempts per strategy.
+On the bracket model, each of 32 inputs was attacked by each of five strategies (unbalanced context, distractor comment, activation targeted, context dilution, and a combined strategy) at budgets of 1, 2, 3 and 5 substituted tokens. Each strategy overwrites tokens in place. That gives 128 attempts per strategy and 640 in total. The baseline replaced the same numbers of tokens with random tokens from the vocabulary (128 attempts).
+
+The quote-model experiments were built differently. Each of the three strategies (distractor, nested, swap context) prepends $n$ copies of one fixed line of code to the input, for $n = 1, 2, 3, 5, 10, 20, 50$. Each line is several tokens, so $n$ counts lines, not tokens. The baseline prepends $n$ copies of the fixed line \texttt{\# padding}. It is a neutral-padding baseline, not random editing. There were 32 inputs, giving 224 attempts per strategy and 224 for the baseline. The two experiments' budgets are therefore not in a common unit.
 
 An attempt counts as a success, or \emph{flip}, when the model's prediction changes. The code does not check that the edited input still has the same correct answer, so flips are prediction changes, not verified misclassifications.
 
@@ -274,7 +276,7 @@ The fair version reported 87.5\% without stating which definition it used. That 
 Recall is 100\% under both definitions, but recall alone is weak evidence, since flagging every input would also achieve it. Here it reflects that every observed flip started from \rb{}. The fair version also claimed that $\Lhat$ identified the required token budget for 28 of 32 inputs. The code does not compute this, and the claim is withdrawn.
 
 \subsection{Quote Model (\observed)}\label{sec:quote}
-On the quote model, random edits never flipped a prediction (0 of 224). Circuit-informed attacks flipped none at budgets of 20 tokens or fewer (0 of 576) and 71 of 96 at 50 tokens. Signed margin and flip rate were positively correlated ($r = +0.368$, $p = 0.038$), the opposite sign from the bracket model. The direction of flips depended on the strategy:
+On the quote model, the padding baseline never flipped a prediction (0 of 224). Circuit-informed attacks flipped none with 20 or fewer prepended lines (0 of 576) and 71 of 96 with 50 lines. Signed margin and flip rate were positively correlated ($r = +0.368$, $p = 0.038$), the opposite sign from the bracket model. The direction of flips depended on the strategy:
 \begin{center}
 \small
 \begin{tabular}{@{}lcc@{}}
@@ -292,16 +294,18 @@ The fair version reported a 13.4\% vs.\ 0.0\% asymmetry and concluded that the d
 \subsection{Cross-Task Sensitivity and Normalized Margins (\calibrated)}\label{sec:normalized}
 \begin{center}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccl@{}}
 \toprule
-Task & $\Lhat$ & $\Lhat(1+K)$ & Normalized margin \\
+Task & $\Lhat$ & $\Lhat(1+K)$ & Normalized margin & Budget unit \\
 \midrule
-Bracket & 3.04 & 6.07 & 0.95 tokens \\
-Quote & 1.35 & 2.71 & 3.39 tokens \\
+Bracket & 3.04 & 6.07 & 0.95 & substituted token \\
+Quote & 1.35 & 2.71 & 3.39 & prepended line \\
 \bottomrule
 \end{tabular}
 \end{center}
-The bracket model's $\Lhat$ is $2.24\times$ the quote model's. Normalized margins rank the quote model as harder to flip, which matches the observed success rates (at 5 tokens: 23/160 for the bracket model, 0/96 for the quote model). They do not predict the budget. The quote model's normalized margin of about 3.4 tokens suggested flips within a few tokens, but none occurred below 50 tokens. For the bracket model (about 1 token), only 7 of 160 one-token attempts succeeded. The fair version's statement that normalized margins ``correctly predicted the $3.56\times$ larger attack budget'' is withdrawn.
+These values are in different units (Section~\ref{sec:attacks}), so they cannot be compared across the two models. The fair version's cross-task comparisons are withdrawn: the bracket model being ``$2.24\times$ more sensitive'' and normalized margins ``correctly predicting the $3.56\times$ larger attack budget''. Neither experiment shows that one model is harder to flip than the other under matched token edits.
+
+Within each model, normalized margins also do not predict the budget. For the bracket model (about 1 token), only 7 of 160 one-token attempts succeeded. For the quote model (about 3.4 lines), no input flipped with fewer than 50 prepended lines.
 
 \subsection{Post-Hoc Error Analysis (\observed)}
 Of the 16 inputs the rule flags, the 12 that were flipped (by any strategy) and the 4 that were not differ in how much the attacks moved them:
@@ -333,7 +337,7 @@ This does not mean every edit pushed the margin toward \rbb{}: 264 of 640 circui
 \end{enumerate}
 
 \subsection{Interpretation of Cross-Task Results}
-The quote model's positive correlation does not contradict Theorem R4, which only gives a lower bound on distance. Together with the strategy-dependent directions in Section~\ref{sec:quote}, it suggests that direction-dependence is a property of the model and the attack family together, not of the model alone.
+The quote model's positive correlation does not contradict Theorem R4, which only gives a lower bound on distance. Together with the strategy-dependent directions in Section~\ref{sec:quote}, it suggests that direction-dependence is a property of the model and the attack family together, not of the model alone. Because the two experiments used different kinds of perturbation (token substitution vs.\ prepended lines) and different baselines, they cannot be compared quantitatively.
 
 \subsection{Limits and Non-Claims}
 \begin{itemize}
@@ -341,6 +345,7 @@ The quote model's positive correlation does not contradict Theorem R4, which onl
   \item Flips are prediction changes, not verified misclassifications.
   \item The prediction rule is evaluated retrospectively on the same 32 inputs. Cross-validation reuses them, and no new inputs were tested.
   \item The confidence intervals in the fair version could not be verified from the saved results and are omitted.
+  \item The quote-model experiment records its budget in prepended lines, not token edits, and uses fixed padding rather than random edits as its baseline. Its results are not on the same scale as the bracket-model results.
   \item The scale is small: 32 inputs per model, one model per task, and a single saved run. The experiments have not been re-run from scratch since the fair.
   \item We do \textbf{not} claim the directional rule is a universal theorem for all attack families.
   \item Margin-based filtering is not validated against adaptive white-box attackers and is therefore a scoped heuristic.
@@ -367,7 +372,7 @@ This project supports a narrower claim set than the fair version:
   \item \textbf{\proved{} (elementary) / \observed:} directional family budgets ($\beta^{+}$, $\beta^{-}$) give a way to describe direction-dependent attack success. On the bracket model every observed flip went one way. On the quote model the direction depended on the strategy.
   \item \textbf{\observed:} the best circuit-informed strategy flipped 31 of 128 bracket-model predictions, compared with 2 of 128 for random edits.
   \item \textbf{\observed:} in retrospect, a sign-based rule sorted 28 of 32 inputs correctly (any strategy), or 27 of 32 (combined strategy).
-  \item \textbf{\calibrated:} empirical sensitivity estimates rank the quote model as harder to attack but do not predict attack budgets.
+  \item \textbf{\calibrated:} empirical sensitivity estimates describe each experiment's attacks, but they do not predict attack budgets. They are in different units for the two models, so they do not show that either model is harder to attack.
 \end{enumerate}
 The main lesson stands, with the numbers corrected: understanding a model's internal structure can make attacks much more effective. That same understanding is what made it possible to see that, on the bracket model, these attacks succeeded only from one side of the decision boundary.
 
@@ -382,8 +387,9 @@ The main lesson stands, with the numbers corrected: understanding a model's inte
   \item \textbf{Section 4.5:} the claim of preliminary ICP validation is withdrawn, because no ICP results were saved.
   \item \textbf{Section 5.1:} ``24.2\% across all trials'' corrected to the best strategy (31/128), with all five strategies reported. ``Efficiency improvement'' is now a flip-rate ratio. Confidence intervals that could not be verified are omitted.
   \item \textbf{Section 5.2:} 87.5\% is now stated with its definition (any strategy), alongside 84.4\% (combined strategy), and the label changed from \calibrated{} to \observed. The edit-budget prediction claim (28 of 32) is withdrawn.
+  \item \textbf{Sections 3.6, 4.1, 4.2 and 4.4:} the quote-model experiment is described as it was run. Its attacks prepend whole lines, its budget counts lines rather than tokens, and its baseline is fixed padding rather than random edits.
   \item \textbf{Section 5.3:} the quote-model asymmetry is scoped to one of three strategies. The conclusion that the double-quote representation is ``more fragile'' is withdrawn.
-  \item \textbf{Section 5.4:} the claim that normalized margins predict attack budgets is withdrawn.
+  \item \textbf{Section 5.4:} the claim that normalized margins predict attack budgets is withdrawn, as are the cross-task comparisons ($2.24\times$ sensitivity, $3.56\times$ budget). The two models' values are in different units.
   \item \textbf{Section 5.5:} the error analysis is described as circular and post hoc, and the significance test is removed.
   \item \textbf{Section 5.6:} ``perfect directional selectivity confirms the core geometric insight'' is replaced with the observed counts and the caveat about margin movement.
 \end{itemize}
