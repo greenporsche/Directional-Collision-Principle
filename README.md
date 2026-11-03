@@ -17,7 +17,7 @@ OpenAI released *weight-sparse* transformers whose internal circuits can be read
 1. If you know how a model's circuit works, can you design edits that change its prediction more often than random edits do?
 2. Can you tell in advance which inputs those edits will succeed on?
 
-The main experiment uses OpenAI's bracket-counting model (`csp_yolo2`), which predicts whether a line of Python closes with `]` or `]]`. Each of 32 inputs was attacked with random token edits and with five circuit-informed strategies, at budgets of 1, 2, 3 and 5 changed tokens. That makes 128 attempts per strategy.
+The main experiment uses OpenAI's bracket-counting model (`csp_yolo2`), which predicts whether a line of Python closes with `]` or `]]`. Each of 32 inputs was attacked with random token edits and with five circuit-informed strategies, at requested budgets of 1, 2, 3 and 5 token substitutions. That makes 128 attempts per strategy. The saved results record the requested budget, so the number of positions that actually changed can be smaller.
 
 ---
 
@@ -39,7 +39,7 @@ All counts below are recomputed from the CSV files in `experiments/data/`.
 
 **A second model.** The same questions were asked of OpenAI's quote-type model (`csp_yolo1`, which predicts `"` vs `'`), using a differently built experiment. Each attack prepends copies of a fixed line of code, so its budget counts lines, not tokens, and the baseline prepends fixed `# padding` lines rather than making random edits. The padding baseline never flipped the model (0 of 224), and the attacks flipped nothing with fewer than 50 prepended lines. Of the three strategies, one (distractor comments) worked in only one direction (15 of 112 vs 0 of 112). The other two did not show a consistent direction. So whether attacks are one-directional depends on the attack strategy, not only on the model. Because the two experiments use different units, their numbers cannot be compared with each other.
 
-**Sensitivity estimates.** The 95th-percentile change in margin per unit of attack budget was about 3.04 per substituted token for the bracket model, and 1.35 per prepended line for the quote model. Because the units differ, these numbers do not show that either model is more sensitive. They are empirical descriptions of these attacks, not guaranteed bounds.
+**Sensitivity estimates.** The 95th-percentile change in margin per unit of attack budget was about 3.04 per requested token substitution for the bracket model, and 1.35 per prepended line for the quote model. Because the units differ, these numbers do not show that either model is more sensitive. They are empirical descriptions of these attacks, not guaranteed bounds.
 
 ---
 
@@ -60,7 +60,7 @@ The project uses this bound as a lens and adds a conditional, directional versio
 - **What the prediction rule uses.** The rule uses only the sign of the margin, meaning which answer the model starts with. It does not use the sensitivity estimate or predict how many edits are needed. The fair version's claim that it predicted the required number of edits for 28 of 32 inputs is not supported by the code.
 - **100% recall is weak evidence on its own.** Flagging every input would also give 100% recall. Here it reflects that all observed flips happened in one direction.
 - **The quote-model asymmetry.** The fair version's "13.4% vs 0%" asymmetry comes from one of the three strategies. The other two did not show it.
-- **Other withdrawn claims.** The fair version also claimed that the bracket model is 2.24× more sensitive than the quote model, and that normalized margins correctly predict a 3.56× larger attack budget for the quote model. The two experiments measure budgets in different units (substituted tokens vs prepended lines), so these comparisons are withdrawn. It also presented a post-hoc error analysis that is circular (it measures sensitivity from the same attacks it explains), and reported preliminary validation of a probing protocol whose results were never saved. The revised paper's Appendix A lists every change.
+- **Other withdrawn claims.** The fair version also claimed that the bracket model is 2.24× more sensitive than the quote model, and that normalized margins correctly predict a 3.56× larger attack budget for the quote model. The two experiments measure budgets in different units (requested token substitutions vs prepended lines), so these comparisons are withdrawn. It also presented a post-hoc error analysis that is circular (it measures sensitivity from the same attacks it explains), and reported preliminary validation of a probing protocol whose results were never saved. The revised paper's Appendix A lists every change.
 - **Scale.** 32 inputs per model, one model per task, and results from a single saved run. The experiments have not been re-run from scratch since the fair.
 
 ---
@@ -114,7 +114,7 @@ python src/predict_then_attack.py        # Sign-based prediction rule (27/32 vs 
 python src/attack_taxonomy_analysis.py   # Success rate per attack strategy
 
 # Sensitivity estimates (empirical, not certified)
-python src/lipschitz_estimation.py       # Bracket model, about 3.04 per token
+python src/lipschitz_estimation.py       # Bracket model, about 3.04 per requested substitution
 python src/quote_lipschitz_estimation.py # Quote model, about 1.35 per prepended line
 python src/quote_bracket_comparison.py   # Cross-model comparison (units differ; see Limitations)
 

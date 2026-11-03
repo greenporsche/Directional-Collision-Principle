@@ -168,7 +168,7 @@ python src/quote_bracket_comparison.py
 ```
 
 Expected:
-- Quote task L ~ 1.35 per prepended line (bracket L ~ 3.04 per substituted token)
+- Quote task L ~ 1.35 per prepended line (bracket L ~ 3.04 per requested token substitution)
 - L ratio 2.24x and normalized margin ratio 3.56x: the scripts print these, but the two tasks measure budget in different units, so the ratios do not compare the models (see the main README)
 
 ---
