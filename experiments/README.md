@@ -54,7 +54,7 @@ python src/defense_demonstration.py      # Show defense effectiveness
 experiments/
 ├── src/                               # Experiment scripts
 │   ├── directional_analysis.py        # KEY FINDING: Directional correlation
-│   ├── predict_then_attack.py         # 84% prediction accuracy
+│   ├── predict_then_attack.py         # Sign-based prediction rule
 │   ├── attack_taxonomy_analysis.py    # Attack strategy mapping
 │   ├── lipschitz_estimation.py        # Bracket task L ≈ 3.04
 │   ├── quote_lipschitz_estimation.py  # Quote task L ≈ 1.35
@@ -71,7 +71,7 @@ experiments/
 │   ├── symmetry_visualization.py     # Symmetry structure figures
 │   ├── lipschitz_inflation_analysis.py # L-inflation analysis
 │   ├── quote_task_theoretical.py     # Theoretical predictions
-│   ├── certified_lipschitz_bound.py  # Certified bounds analysis
+│   ├── certified_lipschitz_bound.py  # Spectral-norm bound (not a valid certificate; see main README)
 │   ├── icp_validation.py            # Independent calibration probe
 │   ├── run_full_experiment.py        # Full experiment runner
 │   ├── multi_seed_baseline.py        # Multi-seed baseline
@@ -108,14 +108,16 @@ experiments/
 
 ## Key Results
 
+See the main [README](../README.md#limitations-and-corrections) for what these numbers do and do not show.
+
 | Metric | Value | Script |
 |--------|-------|--------|
-| Directional Correlation | r = -0.60 (p < 0.001) | `src/directional_analysis.py` |
-| Prediction Accuracy | 84.4% | `src/predict_then_attack.py` |
-| Recall (no missed attacks) | 100% | `src/predict_then_attack.py` |
-| Attack Efficiency Improvement | 15.5x | `src/attack_taxonomy_analysis.py` |
-| Bracket Task L | **3.04** | `src/lipschitz_estimation.py` |
-| Quote Task L | **1.35** | `src/quote_lipschitz_estimation.py` |
+| Directional correlation (32 inputs, all five strategies) | r = -0.60 | `src/directional_analysis.py` |
+| Prediction accuracy vs combined strategy (27/32) | 84.4% | `src/predict_then_attack.py` |
+| Recall (11/11 flipped inputs flagged) | 100% | `src/predict_then_attack.py` |
+| Best strategy vs random flip rate (31/128 vs 2/128) | 15.5x | `src/attack_taxonomy_analysis.py` |
+| Bracket task L (empirical estimate) | **3.04** | `src/lipschitz_estimation.py` |
+| Quote task L (empirical estimate) | **1.35** | `src/quote_lipschitz_estimation.py` |
 | L Ratio (sensitivity) | **2.24x** | `src/quote_bracket_comparison.py` |
 | Normalized Margin Ratio | **3.56x** | `src/quote_bracket_comparison.py` |
 
