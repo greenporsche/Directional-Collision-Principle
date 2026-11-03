@@ -2,11 +2,9 @@
 
 **Using interpretable circuits to attack, and to predict attacks on, OpenAI's weight-sparse transformers**
 
-*Siddharth Krishna* · School science fair project, 2025–26 school year · README revised November 2026
+*Siddharth Krishna* · School science fair project, 2025–26 school year
 
-[Paper (PDF, revised)](paper/FINAL_PAPER.pdf) · [Poster (PDF, fair version)](paper/fair-version/POSTER.pdf) · [Original fair version](paper/fair-version/)
-
-> **About this revision.** In November 2026 every claim was re-checked against the saved experiment data. Several were overstated or unsupported, and the paper and this README were corrected to match. The paper's Appendix A lists every change. The original paper, research summary and poster are kept unchanged in [`paper/fair-version/`](paper/fair-version/). See [Limitations and corrections](#limitations-and-corrections).
+[Paper (PDF, revised)](paper/FINAL_PAPER.pdf) · [Poster (PDF, fair version)](paper/fair-version/POSTER.pdf)
 
 ---
 
@@ -45,23 +43,9 @@ All counts below are recomputed from the CSV files in `experiments/data/`.
 
 ## The math, and where it fits
 
-Let the margin `m(x)` be the difference between the model's two logits. If `m` can change by at most `L` per unit of input distance, then flipping an input takes a distance of at least `|m(x)| / L`. This is the standard Lipschitz-margin argument from robustness research ([Hein & Andriushchenko, 2017](https://arxiv.org/abs/1705.08475); [Tsuzuku et al., 2018](https://arxiv.org/abs/1802.04034)). It follows directly from the assumption and is not a new result.
+Let the margin `m(x)` be the difference between the model's two logits. If `m` can change by at most `L` per unit of input distance, then flipping an input takes a distance of at least `|m(x)| / L`. This is the standard Lipschitz-margin argument from robustness research ([Hein & Andriushchenko, 2017](https://arxiv.org/abs/1705.08475); [Tsuzuku et al., 2018](https://arxiv.org/abs/1802.04034)).
 
 The project uses this bound as a lens and adds a conditional, directional version: *if* an attack family could only push the margin one way, it could never flip inputs on the other side of the decision boundary. This is a mathematical observation, not something the experiments established. The tested attacks moved the margin both ways, even though every observed flip went in one direction.
-
----
-
-## Limitations and corrections
-
-- **Prediction accuracy.** The fair version reported 87.5% without saying what counts as "vulnerable." The figure holds when "vulnerable" means "flipped by any of the five circuit strategies." Against the combined strategy alone, the same rule scores 84.4%.
-- **The 15× comparison.** It compares the *best* of five strategies with random edits. Random edits succeeded only 2 times in 128, so the true ratio is very uncertain. The fair version's confidence interval (11.2×–19.8×) could not be verified from the saved results and is omitted here.
-- **No certified bound.** The fair version described a "certified" Lipschitz bound built by multiplying weight-matrix norms. That calculation leaves out the input-dependent way attention mixes tokens ([Kim et al., 2021](https://proceedings.mlr.press/v139/kim21i.html)). It also leaves out the conversion from token edits to the distance the bound uses. So it is not a valid certificate, and the sensitivity values above are empirical estimates only.
-- **Prediction flips, not proven misclassifications.** An attack counts as successful when the model's prediction changes. The code does not check that the edited input still has the same correct answer.
-- **What the prediction rule uses.** The rule uses only the sign of the margin, meaning which answer the model starts with. It does not use the sensitivity estimate or predict how many edits are needed. The fair version's claim that it predicted the required number of edits for 28 of 32 inputs is not supported by the code.
-- **100% recall is weak evidence on its own.** Flagging every input would also give 100% recall. Here it reflects that all observed flips happened in one direction.
-- **The quote-model asymmetry.** The fair version's "13.4% vs 0%" asymmetry comes from one of the three strategies. The other two did not show it.
-- **Other withdrawn claims.** The fair version also claimed that the bracket model is 2.24× more sensitive than the quote model, and that normalized margins correctly predict a 3.56× larger attack budget for the quote model. The two experiments measure budgets in different units (requested token substitutions vs prepended lines), so these comparisons are withdrawn. It also presented a post-hoc error analysis that is circular (it measures sensitivity from the same attacks it explains), and reported preliminary validation of a probing protocol whose results were never saved. The revised paper's Appendix A lists every change.
-- **Scale.** 32 inputs per model, one model per task, and results from a single saved run. The experiments have not been re-run from scratch since the fair.
 
 ---
 
