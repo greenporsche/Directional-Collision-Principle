@@ -3,7 +3,9 @@
 ## Research Summary
 
 **Author:** Siddharth Krishna
-**Category:** Systems Software / Computational Biology and Bioinformatics / Mathematics
+**Category:** Systems Software / Machine Learning
+
+> **Note (November 2026):** This is the version submitted to the school science fair, kept for the record. Several claims below were later found to be overstated, including the "certified" bound, the confidence intervals, and the edit-budget prediction. See [Limitations and corrections](../README.md#limitations-and-corrections) in the main README.
 
 ---
 
@@ -24,10 +26,6 @@ I estimated task-specific sensitivity parameters ($\hat{L}_{bracket} \approx 3.0
 ## 1. Research Question
 
 > **How accurately can a theory grounded in Lipschitz geometry and directional symmetry predict the vulnerability of sparse neural circuit representations, and how do directional constraints influence realized attack efficiency?**
-
-### Gradient Framework Classification
-- **Level:** 8M (Resource-Bounded Optimization with Mechanistic Probing)
-- **Constraints satisfied:** C1-C11 (Coherence through Mechanism)
 
 ---
 

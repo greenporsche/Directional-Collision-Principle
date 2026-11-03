@@ -3,6 +3,8 @@
 **Author:** Siddharth Krishna
 **Category:** Systems Software / Machine Learning
 
+> **Note (November 2026):** This is the version submitted to the school science fair, kept for the record. Several claims below were later found to be overstated, including the "certified" bound, the confidence intervals, and the edit-budget prediction. See [Limitations and corrections](../README.md#limitations-and-corrections) in the main README.
+
 ---
 
 ## Abstract
